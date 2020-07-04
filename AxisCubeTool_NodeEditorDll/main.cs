@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityJsonDll;
 
@@ -15,12 +16,18 @@ namespace AxisCubeTool_NodeEditorDll
 
     #region mainClass
     [SerializeField]
-    public class NodeTableManager : INodeEditing
+    public class TableEditingManager : INodeEditing
     {
         //  defines
-        public struct NodeInfo
+        internal struct NodeInfo
         {
-            
+            public int mnodeHashCode;
+            public float mpercent;
+        }
+        internal struct Node
+        {
+            public List<NodeInfo> mnodeInfos;
+            public ENodeQualifier mnodeQualifier;
         }
 
         public enum EAxisKind
@@ -29,6 +36,17 @@ namespace AxisCubeTool_NodeEditorDll
             Glacier = 2,
             Depth = 3
         };
+        public enum ENodeQualifier
+        {
+            Mutable = 1,
+            Immutable = 2
+        };
+        public enum ETableQualifier
+        {
+            Public = 1,
+            Private = 2,
+            Internal = 3
+        };
 
 
 
@@ -36,18 +54,21 @@ namespace AxisCubeTool_NodeEditorDll
         private GuideAreamanager mguideAreamanager;
         private NodePositionManager mnodePositionManager;
 
-        private Dictionary<string, int> mnodeKindsTable;
+        private ETableQualifier mtableQualifier;
 
+        private Vector3Int maxisLength;
+        private Node[,,] mnodeTable;
 
 
 
         //  methods
             //  constructor
-        public NodeTableManager()
+        public TableEditingManager()
         {
             mguideAreamanager = new GuideAreamanager();
             mnodePositionManager = new NodePositionManager();
 
+            mtableQualifier = ETableQualifier.Public;
         }
 
             //  Implements
@@ -60,7 +81,8 @@ namespace AxisCubeTool_NodeEditorDll
 
         }
     }
-    public class PaletteTableManager : INodeEditing
+    [SerializeField]
+    public class PaletteManager : INodeEditing
     {
         //  defines
 
@@ -68,7 +90,7 @@ namespace AxisCubeTool_NodeEditorDll
 
         //  methods
             //  constructor
-        public PaletteTableManager()
+        public PaletteManager()
         {
 
         }

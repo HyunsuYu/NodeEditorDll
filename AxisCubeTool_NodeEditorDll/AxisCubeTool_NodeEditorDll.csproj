@@ -12,6 +12,9 @@
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2019.3.2f1\Editor\Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
+    <Reference Include="UnityJsonDll">
+      <HintPath>..\..\UnityJsonDLL\UnityJsonDll\bin\Debug\netcoreapp3.1\UnityJsonDll.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
