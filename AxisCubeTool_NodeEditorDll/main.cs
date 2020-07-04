@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 using UnityJsonDll;
 
@@ -19,22 +18,23 @@ namespace AxisCubeTool_NodeEditorDll
     public class TableEditingManager : INodeEditing
     {
         //  defines
-        internal struct NodeInfo
+        internal struct NodeDivideInfo
         {
             public int mnodeHashCode;
             public float mpercent;
         }
         internal struct Node
         {
-            public List<NodeInfo> mnodeInfos;
+            public List<NodeDivideInfo> mdetailModeInfos;
+            public List<NodeDivideInfo> msubNodeInfos;
             public ENodeQualifier mnodeQualifier;
         }
 
         public enum EAxisKind
         {
-            lava = 1,
+            Depth = 1,
             Glacier = 2,
-            Depth = 3
+            Lava = 3
         };
         public enum ENodeQualifier
         {
@@ -56,19 +56,24 @@ namespace AxisCubeTool_NodeEditorDll
 
         private ETableQualifier mtableQualifier;
 
-        private Vector3Int maxisLength;
+        private Vector3Int maxisLength; //  x : Lava, y : Glacier, z : Depth
         private Node[,,] mnodeTable;
+
+        private PaletteManager mpaletteManager;
 
 
 
         //  methods
             //  constructor
-        public TableEditingManager()
+        public TableEditingManager(in PaletteManager paletteManager)
         {
             mguideAreamanager = new GuideAreamanager();
             mnodePositionManager = new NodePositionManager();
 
             mtableQualifier = ETableQualifier.Public;
+
+            maxisLength = new Vector3Int(5, 5, 5);
+
         }
 
             //  Implements
@@ -80,13 +85,45 @@ namespace AxisCubeTool_NodeEditorDll
         {
 
         }
+
+            //  get, set
+        public ETableQualifier TableQualifier
+        {
+            get => mtableQualifier;
+            set => mtableQualifier = value;
+        }
+
+            //  behaviour
+        public void SetAxisLength(in EAxisKind axisKind, int changeAxisLength)
+        {
+
+        }
     }
     [SerializeField]
     public class PaletteManager : INodeEditing
     {
         //  defines
+        public struct DetailNode
+        {
+
+        }
+        public struct SubNode
+        {
+
+        }
+
+        public enum DetailNodeKind
+        {
+            SedimentaryRock = 1,
+            IgneousRock = 2,
+            MetamorphicRock = 3
+        };
+
+
 
         //  properties
+
+
 
         //  methods
             //  constructor
