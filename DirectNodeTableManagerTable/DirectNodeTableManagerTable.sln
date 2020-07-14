@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30225.117
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AxisCubeTool_UIManagerDll", "AxisCubeTool_UIManagerDll.csproj", "{5F9236F2-9AB1-4D03-98EB-0C93F41C8309}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DirectNodeTableManagerTableDll", "DirectNodeTableManagerTableDll.csproj", "{C57F05EE-6410-4953-B444-FC2D10591AD5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5F9236F2-9AB1-4D03-98EB-0C93F41C8309}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5F9236F2-9AB1-4D03-98EB-0C93F41C8309}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5F9236F2-9AB1-4D03-98EB-0C93F41C8309}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5F9236F2-9AB1-4D03-98EB-0C93F41C8309}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C57F05EE-6410-4953-B444-FC2D10591AD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C57F05EE-6410-4953-B444-FC2D10591AD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C57F05EE-6410-4953-B444-FC2D10591AD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C57F05EE-6410-4953-B444-FC2D10591AD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {D5CC8550-D0D5-47B5-A85E-77BE0733440A}
+		SolutionGuid = {7D311604-9E90-40C3-8A7B-D22DE9FAEA3A}
 	EndGlobalSection
 EndGlobal
