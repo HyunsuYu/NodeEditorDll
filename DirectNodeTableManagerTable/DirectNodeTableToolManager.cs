@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace DirectNodeTableManagerTool
 {
-    public class DIrectNodeTableToolManager
+    public class DIrectNodeTableManager
     {
 
     }
