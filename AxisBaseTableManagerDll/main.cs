@@ -4,28 +4,60 @@ using Newtonsoft.Json;
 
 namespace AxisBaseTableManager
 {
-    public class AxisBaseTableManager<EHighOrderedNodeType, EMiddleOrderedNOdeType, ELowOrderedNodeType>
+    public class AxisBaseTableManager
     {
-        public struct Node
-        {
-            public int mnodeHaskCode;
-        }
-
-
-        
-        private Node[,,] mnodeTable;
+        private int[,,] mnodeTable;
         private AxisBaseTablePalette maxisBaseTablePalette;
-        private OrderedCube morderedCube;
+        private int mxLength, myLength, mzLength;
 
 
 
-        public AxisBaseTableManager(in AxisBaseTablePalette axisBaseTablePalette, in OrderedCube orderedCube)
+        public AxisBaseTableManager(in AxisBaseTablePalette axisBaseTablePalette)
         {
             maxisBaseTablePalette = axisBaseTablePalette;
-            morderedCube = orderedCube;
+            mxLength = maxisBaseTablePalette.OrderedCube.X;
+            myLength = maxisBaseTablePalette.OrderedCube.Y;
+            mzLength = maxisBaseTablePalette.OrderedCube.Z;
+            mnodeTable = new int[mxLength, myLength, mzLength];
+            for(int coord_x = 0; coord_x < mxLength; coord_x++)
+            {
+                for(int coord_y = 0; coord_y < myLength; coord_y++)
+                {
+                    for(int coord_z = 0; coord_z < mzLength; coord_z++)
+                    {
+                        mnodeTable[coord_x, coord_y, coord_z] = -1;
+                    }
+                }
+            }
+        }
+        public AxisBaseTableManager(in AxisBaseTablePalette axisBaseTablePalette, int x, int y, int z)
+        {
+            maxisBaseTablePalette = axisBaseTablePalette;
+            mxLength = x;
+            myLength = y;
+            mzLength = z;
+            mnodeTable = new int[mxLength, myLength, mzLength];
+            for (int coord_x = 0; coord_x < mxLength; coord_x++)
+            {
+                for (int coord_y = 0; coord_y < myLength; coord_y++)
+                {
+                    for (int coord_z = 0; coord_z < mzLength; coord_z++)
+                    {
+                        mnodeTable[coord_x, coord_y, coord_z] = -1;
+                    }
+                }
+            }
+        }
+        public AxisBaseTableManager(in AxisBaseTableManager axisBaseTableManager)
+        {
+            mnodeTable = axisBaseTableManager.NodeTable;
+            maxisBaseTablePalette = axisBaseTableManager.AxisBaseTablePalette;
+            mxLength = axisBaseTableManager.X;
+            myLength = axisBaseTableManager.Y;
+            mzLength = axisBaseTableManager.Z;
         }
 
-        public Node[,,] NodeTable
+        public int[,,] NodeTable
         {
             get => mnodeTable;
         }
@@ -33,9 +65,63 @@ namespace AxisBaseTableManager
         {
             get => maxisBaseTablePalette;
         }
-        public OrderedCube OrderedCube
+        public int X
         {
-            get => morderedCube;
+            get => mxLength;
+        }
+        public int Y
+        {
+            get => myLength;
+        }
+        public int Z
+        {
+            get => mzLength;
+        }
+
+        public bool SetNode(int x, int y, int z, int nodeKindCode)
+        {
+            if(x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            {
+                if (maxisBaseTablePalette.NodeTable[nodeKindCode].morderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.X - 1) ? maxisBaseTablePalette.OrderedCube.X - 1 : x, (y > maxisBaseTablePalette.OrderedCube.Y - 1) ? maxisBaseTablePalette.OrderedCube.Y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.Z - 1) ? maxisBaseTablePalette.OrderedCube.Z - 1 : z].morderedTypeClassify)
+                {
+                    mnodeTable[x, y, z] = nodeKindCode;
+                    return true;
+                }
+            }
+            return false;
+        }
+        public bool RemoveNode(int x, int y, int z)
+        {
+            if(x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            {
+                mnodeTable[x, y, z] = -1;
+                return true;
+            }
+            return false;
+        }
+        public void SetXYZLength(int newX, int newY, int newZ)
+        {
+            int[,,] tempNodeTable = new int[newX, newY, newZ];
+
+            for (int coord_x = 0; coord_x < ((mxLength < newX) ? mxLength : newX); coord_x++)
+            {
+                for (int coord_y = 0; coord_y < ((myLength < newY) ? myLength : newY); coord_y++)
+                {
+                    for (int coord_z = 0; coord_z < ((mzLength < newZ) ? mzLength : newZ); coord_z++)
+                    {
+                        tempNodeTable[coord_x, coord_y, coord_z] = mnodeTable[coord_x, coord_y, coord_z];
+                    }
+                }
+            }
+
+            mnodeTable = tempNodeTable;
+            mxLength = newX;
+            myLength = newY;
+            mzLength = newZ;
+        }
+        public byte[] GetTableJsonByteData()
+        {
+            return System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this));
         }
     }
     public class OrderedCube
@@ -138,9 +224,9 @@ namespace AxisBaseTableManager
             }
             return false;
         }
-        public void  SetXYZLength(int newX, int newY, int newZ)
+        public void SetXYZLength(int newX, int newY, int newZ)
         {
-            Node[,,] tempNodeTalbe = new Node[newX, newY, newZ];
+            Node[,,] tempNodeTable = new Node[newX, newY, newZ];
 
             for(int coord_x = 0; coord_x < ((mxLength < newX) ? mxLength : newX); coord_x++)
             {
@@ -148,13 +234,13 @@ namespace AxisBaseTableManager
                 {
                     for(int coord_z = 0; coord_z < ((mzLength < newZ) ? mzLength : newZ); coord_z++)
                     {
-                        tempNodeTalbe[coord_x, coord_y, coord_z].mnodeOrderedType = morderedCubeTable[coord_x, coord_y, coord_z].mnodeOrderedType;
-                        tempNodeTalbe[coord_x, coord_y, coord_z].morderedTypeClassify = morderedCubeTable[coord_x, coord_y, coord_z].morderedTypeClassify;
+                        tempNodeTable[coord_x, coord_y, coord_z].mnodeOrderedType = morderedCubeTable[coord_x, coord_y, coord_z].mnodeOrderedType;
+                        tempNodeTable[coord_x, coord_y, coord_z].morderedTypeClassify = morderedCubeTable[coord_x, coord_y, coord_z].morderedTypeClassify;
                     }
                 }
             }
 
-            morderedCubeTable = tempNodeTalbe;
+            morderedCubeTable = tempNodeTable;
             mxLength = newX;
             myLength = newY;
             mzLength = newZ;
@@ -184,6 +270,8 @@ namespace AxisBaseTableManager
 
         private Dictionary<int, Node> mnodeTable;
         private OrderedNodeType morderedNodeTypeTable;
+        private OrderedCube morderedCube;
+        private Node mdefaultNodeKind;
 
 
 
@@ -191,6 +279,13 @@ namespace AxisBaseTableManager
         {
             mnodeTable = new Dictionary<int, Node>();
             morderedNodeTypeTable = orderedNodeType;
+            mdefaultNodeKind = null;
+        }
+        public AxisBaseTablePalette(in AxisBaseTablePalette axisBaseTablePalette)
+        {
+            mnodeTable = axisBaseTablePalette.NodeTable;
+            morderedNodeTypeTable = axisBaseTablePalette.OrderedNodeTypeTable;
+            mdefaultNodeKind = null;
         }
 
         public Dictionary<int, Node> NodeTable
@@ -201,10 +296,23 @@ namespace AxisBaseTableManager
         {
             get => morderedNodeTypeTable;
         }
+        public OrderedCube OrderedCube
+        {
+            get => morderedCube;
+        }
+        public Node DefauleNodeKind
+        {
+            get => mdefaultNodeKind;
+        }
 
         public void AddNode(string nodeName, in byte[] nodePNG)
         {
             mnodeTable.Add(nodeName.GetHashCode(), new Node(nodeName, nodePNG));
+
+            if(mdefaultNodeKind == null)
+            {
+                mdefaultNodeKind = mnodeTable[nodeName.GetHashCode()];
+            }
         }
         public void SetOrderedType(string targetNodeName, string orderedTypeName, OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
         {
