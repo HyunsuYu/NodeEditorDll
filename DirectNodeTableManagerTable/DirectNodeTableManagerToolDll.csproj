@@ -5,6 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="AxisBaseTableManagerDll">
+      <HintPath>..\AxisBaseTableManagerDll\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\Newtonsoft_Json\Bin\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>

@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace AxisBaseTableManager
 {
-    public class AxisBaseTableManager
+    public class AxisBaseTable
     {
         private int[,,] mnodeTable;
         private AxisBaseTablePalette maxisBaseTablePalette;
@@ -12,7 +12,7 @@ namespace AxisBaseTableManager
 
 
 
-        public AxisBaseTableManager(in AxisBaseTablePalette axisBaseTablePalette)
+        public AxisBaseTable(in AxisBaseTablePalette axisBaseTablePalette)
         {
             maxisBaseTablePalette = axisBaseTablePalette;
             mxLength = maxisBaseTablePalette.OrderedCube.X;
@@ -30,7 +30,7 @@ namespace AxisBaseTableManager
                 }
             }
         }
-        public AxisBaseTableManager(in AxisBaseTablePalette axisBaseTablePalette, int x, int y, int z)
+        public AxisBaseTable(in AxisBaseTablePalette axisBaseTablePalette, int x, int y, int z)
         {
             maxisBaseTablePalette = axisBaseTablePalette;
             mxLength = x;
@@ -48,7 +48,7 @@ namespace AxisBaseTableManager
                 }
             }
         }
-        public AxisBaseTableManager(in AxisBaseTableManager axisBaseTableManager)
+        public AxisBaseTable(in AxisBaseTable axisBaseTableManager)
         {
             mnodeTable = axisBaseTableManager.NodeTable;
             maxisBaseTablePalette = axisBaseTableManager.AxisBaseTablePalette;
@@ -131,6 +131,19 @@ namespace AxisBaseTableManager
             public string mnodeOrderedType;
             public OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
         };
+        public struct InputPack
+        {
+            public int mx, my, mz;
+            public OrderedNodeType morderedNodeType;
+
+            public InputPack(int x, int y, int z, in OrderedNodeType orderedNodeType)
+            {
+                mx = x;
+                my = y;
+                mz = z;
+                morderedNodeType = orderedNodeType;
+            }
+        };
 
 
 
@@ -140,13 +153,13 @@ namespace AxisBaseTableManager
 
 
 
-        public OrderedCube(int x, int y, int z, in OrderedNodeType orderedNodeType)
+        public OrderedCube(in InputPack inputPack)
         {
-            mxLength = x;
-            myLength = y;
-            mzLength = z;
+            mxLength = inputPack.mx;
+            myLength = inputPack.my;
+            mzLength = inputPack.mz;
 
-            morderedNodeType = orderedNodeType;
+            morderedNodeType = inputPack.morderedNodeType;
             morderedCubeTable = new Node[mxLength, myLength, mzLength];
         }
 
@@ -264,15 +277,17 @@ namespace AxisBaseTableManager
 
 
 
-        public AxisBaseTablePalette(in OrderedNodeType orderedNodeType)
+        public AxisBaseTablePalette(in OrderedCube orderedCube)
         {
             mnodeTable = new Dictionary<int, Node>();
+            morderedCube = orderedCube;
             mdefaultNodeKind = null;
         }
         public AxisBaseTablePalette(in AxisBaseTablePalette axisBaseTablePalette)
         {
             mnodeTable = axisBaseTablePalette.NodeTable;
-            mdefaultNodeKind = null;
+            morderedCube = axisBaseTablePalette.OrderedCube;
+            mdefaultNodeKind = axisBaseTablePalette.DefauleNodeKind;
         }
 
         public Dictionary<int, Node> NodeTable
