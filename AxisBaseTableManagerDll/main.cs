@@ -136,17 +136,17 @@ namespace AxisBaseTableManager
 
         private OrderedNodeType morderedNodeType;
         private Node[,,] morderedCubeTable;
-        private bool mbisEditing;
         private int mxLength, myLength, mzLength;
 
 
 
-        public OrderedCube(int x, int y, int z)
+        public OrderedCube(int x, int y, int z, in OrderedNodeType orderedNodeType)
         {
             mxLength = x;
             myLength = y;
             mzLength = z;
 
+            morderedNodeType = orderedNodeType;
             morderedCubeTable = new Node[mxLength, myLength, mzLength];
         }
 
@@ -154,9 +154,9 @@ namespace AxisBaseTableManager
         {
             get => morderedCubeTable;
         }
-        public bool IsEditing
+        public OrderedNodeType OrderedNodeType
         {
-            get => mbisEditing;
+            get => morderedNodeType;
         }
         public int X
         {
@@ -171,19 +171,9 @@ namespace AxisBaseTableManager
             get => mzLength;
         }
 
-        public void SetTableEditingMode(in OrderedNodeType orderedNodeType)
-        {
-            mbisEditing = true;
-            morderedNodeType = orderedNodeType;
-        }
-        public void SetTableRefrenceMode()
-        {
-            mbisEditing = false;
-            morderedNodeType = null;
-        }
         public bool SetNode(int x, int y, int z, string orderedType, OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
         {
-            if (mbisEditing && x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            if (x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
             {
                 switch(orderedTypeClassify)
                 {
@@ -216,7 +206,7 @@ namespace AxisBaseTableManager
         }
         public bool RemoveNode(int x, int y, int z)
         {
-            if (mbisEditing && x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            if (x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
             {
                 morderedCubeTable[x, y, z].mnodeOrderedType = default(string);
                 morderedCubeTable[x, y, z].morderedTypeClassify = default(OrderedNodeType.EOrderedTypeClassify);
@@ -269,7 +259,6 @@ namespace AxisBaseTableManager
 
 
         private Dictionary<int, Node> mnodeTable;
-        private OrderedNodeType morderedNodeTypeTable;
         private OrderedCube morderedCube;
         private Node mdefaultNodeKind;
 
@@ -278,23 +267,17 @@ namespace AxisBaseTableManager
         public AxisBaseTablePalette(in OrderedNodeType orderedNodeType)
         {
             mnodeTable = new Dictionary<int, Node>();
-            morderedNodeTypeTable = orderedNodeType;
             mdefaultNodeKind = null;
         }
         public AxisBaseTablePalette(in AxisBaseTablePalette axisBaseTablePalette)
         {
             mnodeTable = axisBaseTablePalette.NodeTable;
-            morderedNodeTypeTable = axisBaseTablePalette.OrderedNodeTypeTable;
             mdefaultNodeKind = null;
         }
 
         public Dictionary<int, Node> NodeTable
         {
             get => mnodeTable;
-        }
-        public OrderedNodeType OrderedNodeTypeTable
-        {
-            get => morderedNodeTypeTable;
         }
         public OrderedCube OrderedCube
         {
@@ -319,7 +302,7 @@ namespace AxisBaseTableManager
             switch(orderedTypeClassify)
             {
                 case OrderedNodeType.EOrderedTypeClassify.Low:
-                    if(morderedNodeTypeTable.LowOrderedNodeType.ContainsKey(orderedTypeName))
+                    if(morderedCube.OrderedNodeType.LowOrderedNodeType.ContainsKey(orderedTypeName))
                     {
                         mnodeTable[targetNodeName.GetHashCode()].morderedTypeClassify = OrderedNodeType.EOrderedTypeClassify.Low;
                     }
@@ -330,7 +313,7 @@ namespace AxisBaseTableManager
                     break;
 
                 case OrderedNodeType.EOrderedTypeClassify.Middle:
-                    if(morderedNodeTypeTable.MiddleOrderedNodeType.ContainsKey(orderedTypeName))
+                    if(morderedCube.OrderedNodeType.MiddleOrderedNodeType.ContainsKey(orderedTypeName))
                     {
                         mnodeTable[targetNodeName.GetHashCode()].morderedTypeClassify = OrderedNodeType.EOrderedTypeClassify.Middle;
                     }
@@ -341,7 +324,7 @@ namespace AxisBaseTableManager
                     break;
 
                 case OrderedNodeType.EOrderedTypeClassify.High:
-                    if(morderedNodeTypeTable.HighOrderedNodeType.ContainsKey(orderedTypeName))
+                    if(morderedCube.OrderedNodeType.HighOrderedNodeType.ContainsKey(orderedTypeName))
                     {
                         mnodeTable[targetNodeName.GetHashCode()].morderedTypeClassify = OrderedNodeType.EOrderedTypeClassify.High;
                     }
