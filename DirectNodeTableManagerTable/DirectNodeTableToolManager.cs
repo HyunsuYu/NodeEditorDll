@@ -18,64 +18,42 @@ namespace DirectNodeTableManagerTool
             RightSide = 5
         };
 
-        public struct InputPack
-        {
-            private AxisBaseTableManager.AxisBaseTable maxisBaseTable;
-            private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
-
-            public InputPack(in AxisBaseTableManager.AxisBaseTable axisBaseTable, DirectNodeTableCoreInfo directNodeTableCoreInfo)
-            {
-                maxisBaseTable = axisBaseTable;
-                mdirectNodeTableCoreInfo = directNodeTableCoreInfo;
-            }
-
-            public AxisBaseTableManager.AxisBaseTable AxisBaseTable
-            {
-                get => maxisBaseTable;
-            }
-            public DirectNodeTableCoreInfo DirectNodeTableCoreInfo
-            {
-                get => mdirectNodeTableCoreInfo;
-            }
-        };
 
 
-
-        private AxisBaseTableManager.AxisBaseTable maxisBaseTable;
         private List<FloorTable> mfloors;
         private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
-        private const int mdefaultAxisLength = 50;
 
 
 
-        public DIrectNodeTable(in InputPack inputPack)
+        public DIrectNodeTable(in DirectNodeTableCoreInfo directNodeTableCoreInfo)
         {
-            maxisBaseTable = inputPack.AxisBaseTable;
-            mdirectNodeTableCoreInfo = inputPack.DirectNodeTableCoreInfo;
+            mdirectNodeTableCoreInfo = directNodeTableCoreInfo;
             mfloors = new List<FloorTable>();
-            mfloors.Add(new FloorTable(new FloorTable.InputPack(new Vector2Int(DefaultAxisLength, DefaultAxisLength))));
+            mfloors.Add(new FloorTable(new FloorTable.InputPack(new Vector2Int(DirectNodeTableCoreInfo.DefaultAxisLength, DirectNodeTableCoreInfo.DefaultAxisLength), DirectNodeTableCoreInfo.BlockPerNode)));
         }
 
-        public AxisBaseTableManager.AxisBaseTable AxisBaseTable
+        public List<FloorTable> Floors
         {
-            get => maxisBaseTable;
+            get => mfloors;
         }
         public DirectNodeTableCoreInfo DirectNodeTableCoreInfo
         {
             get => mdirectNodeTableCoreInfo;
         }
-        internal int DefaultAxisLength
-        {
-            get => mdefaultAxisLength;
-        }
 
         public void AddFloor(int floorIndex, in Vector2Int axisLength)
         {
-            mfloors.Insert(floorIndex, new FloorTable(new FloorTable.InputPack(axisLength)));
+            mfloors.Insert(floorIndex, new FloorTable(new FloorTable.InputPack(axisLength, DirectNodeTableCoreInfo.BlockPerNode)));
         }
         public bool RemoveFloor(int targetfloorIndex)
         {
             return mfloors.Remove(mfloors[targetfloorIndex]);
+        }
+        public void MoveFloor(int targetIndex, int destinationIndex)
+        {
+            FloorTable tempFloorTable = Floors[targetIndex];
+            Floors.Remove(Floors[targetIndex]);
+            Floors.Insert(destinationIndex, tempFloorTable);
         }
         public void SetAxisLength(int targetFloorIndex, int newX, int newY)
         {
@@ -91,38 +69,68 @@ namespace DirectNodeTableManagerTool
     #region SubClass
     public class AbstractNodeData
     {
+        private AxisBaseTableManager.AxisBaseTablePalette.Node[,] mnodeTable;
 
+
+
+        public AxisBaseTableManager.AxisBaseTablePalette.Node[,] NodeTable
+        {
+            get => mnodeTable;
+        }
     }
     public class DetailNodeData
     {
+        private AxisBaseTableManager.AxisBaseTablePalette.Node[,] mnodeTable;
 
+
+
+        public AxisBaseTableManager.AxisBaseTablePalette.Node[,] NodeTable
+        {
+            get => mnodeTable;
+        }
     }
     public class SubNodeData
     {
+        private AxisBaseTableManager.AxisBaseTablePalette.Node[,] mnodeTable;
 
+
+
+        public AxisBaseTableManager.AxisBaseTablePalette.Node[,] NodeTable
+        {
+            get => mnodeTable;
+        }
     }
-    internal class FloorTable
+    public class FloorTable
     {
         public struct InputPack
         {
             private Vector2Int maxisLength;
+            private int mblockPerNode;
 
-            public InputPack(in Vector2Int axisLength)
+            public InputPack(in Vector2Int axisLength, int blockPerNode)
             {
                 maxisLength = axisLength;
+                mblockPerNode = blockPerNode;
             }
 
             public Vector2Int AxisLength
             {
                 get => maxisLength;
             }
+            public int BlockPerNode
+            {
+                get => mblockPerNode;
+            }
         };
         public struct Node
         {
             private Vector3Int mnodePosition;
+
             private AbstractNodeData mabstractNodeData;
             private DetailNodeData mdetailNodeData;
             private SubNodeData msubNodeData;
+
+            private bool mbactive;
 
             public Node(in Vector3Int nodePosition)
             {
@@ -130,6 +138,7 @@ namespace DirectNodeTableManagerTool
                 mabstractNodeData = new AbstractNodeData();
                 mdetailNodeData = new DetailNodeData();
                 msubNodeData = new SubNodeData();
+                mbactive = false;
             }
 
             public Vector3Int NodePosition
@@ -148,6 +157,11 @@ namespace DirectNodeTableManagerTool
             {
                 get => msubNodeData;
             }
+            public bool Active
+            {
+                get => mbactive;
+                set => mbactive = value;
+            }
         };
 
 
@@ -155,12 +169,18 @@ namespace DirectNodeTableManagerTool
         private Vector2Int maxisLength;
         private Node[,] mnodeTable;
 
+        private int mblockPerNode;
+        private bool mbenforcedMode;
+
 
 
         public FloorTable(in InputPack inputPack)
         {
             maxisLength = inputPack.AxisLength;
             mnodeTable = new Node[AxisLength.y, AxisLength.x];
+
+            mblockPerNode = inputPack.BlockPerNode;
+            mbenforcedMode = true;
         }
 
         public Node[,] NodeTable
@@ -171,7 +191,25 @@ namespace DirectNodeTableManagerTool
         {
             get => maxisLength;
         }
+        public bool EnforcedMode
+        {
+            get => mbenforcedMode;
+            set => mbenforcedMode = value;
+        }
+        internal int BlockPerNode
+        {
+            get => mblockPerNode;
+        }
 
+        public void SetNode(AxisBaseTableManager.AxisBaseTablePalette.Node node, Vector2Int relativePosition)
+        {
+            if(relativePosition.x < 0 || relativePosition.x > BlockPerNode - 1 || relativePosition.y < 0 || relativePosition.y > BlockPerNode - 1)
+            {
+                return;
+            }
+
+            
+        }
         public void SetAxisLength(int newX, int newY)
         {
             Node[,] tempTable = new Node[newX, newY];
@@ -189,7 +227,50 @@ namespace DirectNodeTableManagerTool
     }
     public class DirectNodeTableCoreInfo
     {
+        public struct InputPack
+        {
+            private AxisBaseTableManager.AxisBaseTable maxisBaseTable;
+            private int mblockPerNode;
 
+            public InputPack(in AxisBaseTableManager.AxisBaseTable axisBaseTable, int blockPerNode)
+            {
+                maxisBaseTable = axisBaseTable;
+                mblockPerNode = blockPerNode;
+            }
+
+            public AxisBaseTableManager.AxisBaseTable AxisBaseTable
+            {
+                get => maxisBaseTable;
+            }
+            public int BlockPerNode
+            {
+                get => mblockPerNode;
+            }
+        }
+
+
+
+        private AxisBaseTableManager.AxisBaseTable maxisBaseTable;
+        private int mblockPerNode;
+
+        public DirectNodeTableCoreInfo(in InputPack inputPack)
+        {
+            maxisBaseTable = inputPack.AxisBaseTable;
+            mblockPerNode = inputPack.BlockPerNode;
+        }
+
+        public AxisBaseTableManager.AxisBaseTable AxisBaseTable
+        {
+            get => maxisBaseTable;
+        }
+        public int BlockPerNode
+        {
+            get => mblockPerNode;
+        }
+        public int DefaultAxisLength
+        {
+            get => 50;
+        }
     }
     #endregion
 }
