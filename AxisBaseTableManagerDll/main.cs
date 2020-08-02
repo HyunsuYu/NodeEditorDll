@@ -124,9 +124,151 @@ namespace AxisBaseTableManager
             return System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this));
         }
     }
+    public class AxisBaseTablePalette
+    {
+        public class Node
+        {
+            private string mnodeName;
+            private byte[] mnodePNG;
+
+            private OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
+            private string mnodeOrderedTypeKind;
+
+            public Node(string nodeName, in byte[] nodePNG)
+            {
+                mnodeName = nodeName;
+                mnodePNG = nodePNG;
+
+                morderedTypeClassify = new OrderedNodeType.EOrderedTypeClassify();
+                mnodeOrderedTypeKind = default(string);
+            }
+
+            public string NodeName
+            {
+                get => mnodeName;
+            }
+            public byte[] NodePNG
+            {
+                get => mnodePNG;
+            }
+            public OrderedNodeType.EOrderedTypeClassify OrderedTypeClassify
+            {
+                get => morderedTypeClassify;
+            }
+            public string NodeOrderedTypeKind
+            {
+                get => mnodeOrderedTypeKind;
+            }
+
+            internal void SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
+            {
+                morderedTypeClassify = orderedTypeClassify;
+            }
+            internal void SetNodeOrderedTypeKind(string kind)
+            {
+                mnodeOrderedTypeKind = kind;
+            }
+        }
+
+
+
+        private Dictionary<int, Node> mnodeTable;
+        private List<string> mnodeNames;
+        private OrderedCube morderedCube;
+        private Node mdefaultNodeKind;
+
+
+
+        public AxisBaseTablePalette(in OrderedCube orderedCube)
+        {
+            mnodeTable = new Dictionary<int, Node>();
+            mnodeNames = new List<string>();
+            morderedCube = orderedCube;
+            mdefaultNodeKind = null;
+        }
+        public AxisBaseTablePalette(in AxisBaseTablePalette axisBaseTablePalette)
+        {
+            mnodeTable = axisBaseTablePalette.NodeTable;
+            mnodeNames = axisBaseTablePalette.NodeNames;
+            morderedCube = axisBaseTablePalette.OrderedCube;
+            mdefaultNodeKind = axisBaseTablePalette.DefauleNodeKind;
+        }
+
+        public Dictionary<int, Node> NodeTable
+        {
+            get => mnodeTable;
+        }
+        public List<string> NodeNames
+        {
+            get => mnodeNames;
+        }
+        public OrderedCube OrderedCube
+        {
+            get => morderedCube;
+        }
+        public Node DefauleNodeKind
+        {
+            get => mdefaultNodeKind;
+        }
+
+        public void AddNode(string nodeName, in byte[] nodePNG)
+        {
+            mnodeTable.Add(nodeName.GetHashCode(), new Node(nodeName, nodePNG));
+            mnodeNames.Add(nodeName);
+
+            if(mdefaultNodeKind == null)
+            {
+                mdefaultNodeKind = mnodeTable[nodeName.GetHashCode()];
+            }
+        }
+        public void SetOrderedType(string targetNodeName, string orderedTypeName, OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
+        {
+            switch(orderedTypeClassify)
+            {
+                case OrderedNodeType.EOrderedTypeClassify.Low:
+                    if(morderedCube.OrderedNodeType.LowOrderedNodeType.ContainsKey(orderedTypeName))
+                    {
+                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.Low);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    break;
+
+                case OrderedNodeType.EOrderedTypeClassify.Middle:
+                    if(morderedCube.OrderedNodeType.MiddleOrderedNodeType.ContainsKey(orderedTypeName))
+                    {
+                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.Middle);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    break;
+
+                case OrderedNodeType.EOrderedTypeClassify.High:
+                    if(morderedCube.OrderedNodeType.HighOrderedNodeType.ContainsKey(orderedTypeName))
+                    {
+                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.High);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                    break;
+            }
+            mnodeTable[targetNodeName.GetHashCode()].SetNodeOrderedTypeKind(orderedTypeName);
+        }
+        public void DeleteNode(string nodeName)
+        {
+            mnodeTable.Remove(nodeName.GetHashCode());
+            mnodeNames.Remove(nodeName);
+        }
+    }
     public class OrderedCube
     {
-        public struct Node
+        public class Node
         {
             private string mnodeOrderedType;
             private OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
@@ -223,24 +365,24 @@ namespace AxisBaseTableManager
         {
             if (x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
             {
-                switch(orderedTypeClassify)
+                switch (orderedTypeClassify)
                 {
                     case OrderedNodeType.EOrderedTypeClassify.Low:
-                        if(!morderedNodeType.LowOrderedNodeType.ContainsKey(orderedType))
+                        if (!morderedNodeType.LowOrderedNodeType.ContainsKey(orderedType))
                         {
                             return false;
                         }
                         break;
 
                     case OrderedNodeType.EOrderedTypeClassify.Middle:
-                        if(!morderedNodeType.MiddleOrderedNodeType.ContainsKey(orderedType))
+                        if (!morderedNodeType.MiddleOrderedNodeType.ContainsKey(orderedType))
                         {
                             return false;
                         }
                         break;
 
                     case OrderedNodeType.EOrderedTypeClassify.High:
-                        if(!morderedNodeType.HighOrderedNodeType.ContainsKey(orderedType))
+                        if (!morderedNodeType.HighOrderedNodeType.ContainsKey(orderedType))
                         {
                             return false;
                         }
@@ -266,11 +408,11 @@ namespace AxisBaseTableManager
         {
             Node[,,] tempNodeTable = new Node[newX, newY, newZ];
 
-            for(int coord_x = 0; coord_x < ((mxLength < newX) ? mxLength : newX); coord_x++)
+            for (int coord_x = 0; coord_x < ((mxLength < newX) ? mxLength : newX); coord_x++)
             {
-                for(int coord_y = 0; coord_y < ((myLength < newY) ? myLength : newY); coord_y++)
+                for (int coord_y = 0; coord_y < ((myLength < newY) ? myLength : newY); coord_y++)
                 {
-                    for(int coord_z = 0; coord_z < ((mzLength < newZ) ? mzLength : newZ); coord_z++)
+                    for (int coord_z = 0; coord_z < ((mzLength < newZ) ? mzLength : newZ); coord_z++)
                     {
                         tempNodeTable[coord_x, coord_y, coord_z].SetNodeOrderedType(morderedCubeTable[coord_x, coord_y, coord_z].NodeOrderedType);
                         tempNodeTable[coord_x, coord_y, coord_z].SetOrderedTypeClassify(morderedCubeTable[coord_x, coord_y, coord_z].OrderedTypeClassify);
@@ -282,143 +424,6 @@ namespace AxisBaseTableManager
             mxLength = newX;
             myLength = newY;
             mzLength = newZ;
-        }
-    }
-    public class AxisBaseTablePalette
-    {
-        public class Node
-        {
-            private string mnodeName;
-            private byte[] mnodePNG;
-
-            private OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
-            private string mnodeOrderedTypeKind;
-
-            public Node(string nodeName, in byte[] nodePNG)
-            {
-                mnodeName = nodeName;
-                mnodePNG = nodePNG;
-
-                morderedTypeClassify = new OrderedNodeType.EOrderedTypeClassify();
-                mnodeOrderedTypeKind = default(string);
-            }
-
-            public string NodeName
-            {
-                get => mnodeName;
-            }
-            public byte[] NodePNG
-            {
-                get => mnodePNG;
-            }
-            public OrderedNodeType.EOrderedTypeClassify OrderedTypeClassify
-            {
-                get => morderedTypeClassify;
-            }
-            public string NodeOrderedTypeKind
-            {
-                get => mnodeOrderedTypeKind;
-            }
-
-            internal void SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
-            {
-                morderedTypeClassify = orderedTypeClassify;
-            }
-            internal void SetNodeOrderedTypeKind(string kind)
-            {
-                mnodeOrderedTypeKind = kind;
-            }
-        }
-
-
-
-        private Dictionary<int, Node> mnodeTable;
-        private OrderedCube morderedCube;
-        private Node mdefaultNodeKind;
-
-
-
-        public AxisBaseTablePalette(in OrderedCube orderedCube)
-        {
-            mnodeTable = new Dictionary<int, Node>();
-            morderedCube = orderedCube;
-            mdefaultNodeKind = null;
-        }
-        public AxisBaseTablePalette(in AxisBaseTablePalette axisBaseTablePalette)
-        {
-            mnodeTable = axisBaseTablePalette.NodeTable;
-            morderedCube = axisBaseTablePalette.OrderedCube;
-            mdefaultNodeKind = axisBaseTablePalette.DefauleNodeKind;
-        }
-
-        public Dictionary<int, Node> NodeTable
-        {
-            get => mnodeTable;
-        }
-        public OrderedCube OrderedCube
-        {
-            get => morderedCube;
-        }
-        public Node DefauleNodeKind
-        {
-            get => mdefaultNodeKind;
-        }
-
-        public void AddNode(string nodeName, in byte[] nodePNG)
-        {
-            mnodeTable.Add(nodeName.GetHashCode(), new Node(nodeName, nodePNG));
-
-            if(mdefaultNodeKind == null)
-            {
-                mdefaultNodeKind = mnodeTable[nodeName.GetHashCode()];
-            }
-        }
-        public void SetOrderedType(string targetNodeName, string orderedTypeName, OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
-        {
-            switch(orderedTypeClassify)
-            {
-                case OrderedNodeType.EOrderedTypeClassify.Low:
-                    if(morderedCube.OrderedNodeType.LowOrderedNodeType.ContainsKey(orderedTypeName))
-                    {
-                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.Low);
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    break;
-
-                case OrderedNodeType.EOrderedTypeClassify.Middle:
-                    if(morderedCube.OrderedNodeType.MiddleOrderedNodeType.ContainsKey(orderedTypeName))
-                    {
-                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.Middle);
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    break;
-
-                case OrderedNodeType.EOrderedTypeClassify.High:
-                    if(morderedCube.OrderedNodeType.HighOrderedNodeType.ContainsKey(orderedTypeName))
-                    {
-                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.High);
-                    }
-                    else
-                    {
-                        return;
-                    }
-                    break;
-            }
-            mnodeTable[targetNodeName.GetHashCode()].SetNodeOrderedTypeKind(orderedTypeName);
-        }
-        public void DeleteNode(string nodeName)
-        {
-            mnodeTable.Remove(nodeName.GetHashCode());
-        }
-        public byte[] GetPaletteJsonByteData()
-        {
-            return System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this));
         }
     }
     public class OrderedNodeType

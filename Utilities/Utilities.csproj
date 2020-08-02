@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="AxisBaseTableManagerDll">
+      <HintPath>..\AxisBaseTableManagerDll\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\Private\Private Project\Lab 3\Assets\Plugins\Utilities.dll&quot;" />
+  </Target>
+
+</Project>

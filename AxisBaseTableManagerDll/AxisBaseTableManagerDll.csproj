@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\DirectNodeTableManagerTable\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll&quot;" />
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\DirectNodeTableManagerTable\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\Utilities\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll&quot;" />
   </Target>
 
 </Project>
