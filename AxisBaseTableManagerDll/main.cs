@@ -510,6 +510,15 @@ namespace AxisBaseTableManager
             morderedNodeType = inputPack.OrderedNodeType;
             morderedCubeTable = new Node[mxLength, myLength, mzLength];
         }
+        public OrderedCube(OrderedCube orderedCube)
+        {
+            mxLength = orderedCube.X;
+            myLength = orderedCube.Y;
+            mzLength = orderedCube.Z;
+
+            morderedNodeType = orderedCube.OrderedNodeType;
+            morderedCubeTable = orderedCube.OrderedCubeTable;
+        }
 
         public Node[,,] OrderedCubeTable
         {
@@ -635,11 +644,11 @@ namespace AxisBaseTableManager
 
 
 
-        public OrderedNodeType()
+        public OrderedNodeType(OrderedNodeType orderedNodeType)
         {
-            mlowOrderedNodeTypes = new Dictionary<string, Node>();
-            mmiddleOrderedNodeTypes = new Dictionary<string, Node>();
-            mhighOrderedNodeTypes = new Dictionary<string, Node>();
+            mlowOrderedNodeTypes = orderedNodeType.LowOrderedNodeType;
+            mmiddleOrderedNodeTypes = orderedNodeType.MiddleOrderedNodeType;
+            mhighOrderedNodeTypes = orderedNodeType.HighOrderedNodeType;
         }
 
         public Dictionary<string, Node> LowOrderedNodeType
