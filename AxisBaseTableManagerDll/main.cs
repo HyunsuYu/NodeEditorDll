@@ -6,7 +6,8 @@ namespace AxisBaseTableManager
 {
     public class AxisBaseTable
     {
-        private int[,,] mnodeTable;
+        private int[,,] mgeologyNodeTable;
+        private int[,,] mbiologyNodeTable;
         private AxisBaseTablePalette maxisBaseTablePalette;
         private int mxLength, myLength, mzLength;
 
@@ -18,14 +19,16 @@ namespace AxisBaseTableManager
             mxLength = maxisBaseTablePalette.OrderedCube.X;
             myLength = maxisBaseTablePalette.OrderedCube.Y;
             mzLength = maxisBaseTablePalette.OrderedCube.Z;
-            mnodeTable = new int[mxLength, myLength, mzLength];
+            mgeologyNodeTable = new int[X, Y, Z];
+            mbiologyNodeTable = new int[X, Y, Z];
             for(int coord_x = 0; coord_x < mxLength; coord_x++)
             {
                 for(int coord_y = 0; coord_y < myLength; coord_y++)
                 {
                     for(int coord_z = 0; coord_z < mzLength; coord_z++)
                     {
-                        mnodeTable[coord_x, coord_y, coord_z] = -1;
+                        mgeologyNodeTable[coord_x, coord_y, coord_z] = -1;
+                        mbiologyNodeTable[coord_x, coord_y, coord_z] = -1;
                     }
                 }
             }
@@ -36,30 +39,37 @@ namespace AxisBaseTableManager
             mxLength = x;
             myLength = y;
             mzLength = z;
-            mnodeTable = new int[mxLength, myLength, mzLength];
+            mgeologyNodeTable = new int[X, Y, Z];
+            mbiologyNodeTable = new int[X, Y, Z];
             for (int coord_x = 0; coord_x < mxLength; coord_x++)
             {
                 for (int coord_y = 0; coord_y < myLength; coord_y++)
                 {
                     for (int coord_z = 0; coord_z < mzLength; coord_z++)
                     {
-                        mnodeTable[coord_x, coord_y, coord_z] = -1;
+                        mgeologyNodeTable[coord_x, coord_y, coord_z] = -1;
+                        mbiologyNodeTable[coord_x, coord_y, coord_z] = -1;
                     }
                 }
             }
         }
         public AxisBaseTable(in AxisBaseTable axisBaseTableManager)
         {
-            mnodeTable = axisBaseTableManager.NodeTable;
+            mgeologyNodeTable = axisBaseTableManager.GeologyNodeTable;
+            mbiologyNodeTable = axisBaseTableManager.BiologyNodeTable;
             maxisBaseTablePalette = axisBaseTableManager.AxisBaseTablePalette;
             mxLength = axisBaseTableManager.X;
             myLength = axisBaseTableManager.Y;
             mzLength = axisBaseTableManager.Z;
         }
 
-        public int[,,] NodeTable
+        public int[,,] GeologyNodeTable
         {
-            get => mnodeTable;
+            get => mgeologyNodeTable;
+        }
+        public int[,,] BiologyNodeTable
+        {
+            get => mbiologyNodeTable;
         }
         public AxisBaseTablePalette AxisBaseTablePalette
         {
@@ -78,30 +88,53 @@ namespace AxisBaseTableManager
             get => mzLength;
         }
 
-        public bool SetNode(int x, int y, int z, int nodeKindCode)
+        public bool SetNode(int x, int y, int z, string nodename, AxisBaseTablePalette.EPaletteType paletteType)
         {
             if(x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
             {
-                if (maxisBaseTablePalette.NodeTable[nodeKindCode].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.X - 1) ? maxisBaseTablePalette.OrderedCube.X - 1 : x, (y > maxisBaseTablePalette.OrderedCube.Y - 1) ? maxisBaseTablePalette.OrderedCube.Y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.Z - 1) ? maxisBaseTablePalette.OrderedCube.Z - 1 : z].OrderedTypeClassify)
+                switch(paletteType)
                 {
-                    mnodeTable[x, y, z] = nodeKindCode;
-                    return true;
+                    case AxisBaseTablePalette.EPaletteType.Geology:
+                        if (maxisBaseTablePalette.GeologyNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.X - 1) ? maxisBaseTablePalette.OrderedCube.X - 1 : x, (y > maxisBaseTablePalette.OrderedCube.Y - 1) ? maxisBaseTablePalette.OrderedCube.Y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.Z - 1) ? maxisBaseTablePalette.OrderedCube.Z - 1 : z].OrderedTypeClassify)
+                        {
+                            mgeologyNodeTable[x, y, z] = nodename.GetHashCode();
+                            return true;
+                        }
+                        return true;
+
+                    case AxisBaseTablePalette.EPaletteType.Biology:
+                        if (maxisBaseTablePalette.BiologyNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.X - 1) ? maxisBaseTablePalette.OrderedCube.X - 1 : x, (y > maxisBaseTablePalette.OrderedCube.Y - 1) ? maxisBaseTablePalette.OrderedCube.Y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.Z - 1) ? maxisBaseTablePalette.OrderedCube.Z - 1 : z].OrderedTypeClassify)
+                        {
+                            mbiologyNodeTable[x, y, z] = nodename.GetHashCode();
+                            return true;
+                        }
+                        return true;
+                }
+            }
+
+            return false;
+        }
+        public bool RemoveNode(int x, int y, int z, AxisBaseTablePalette.EPaletteType paletteType)
+        {
+            if(x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            {
+                switch(paletteType)
+                {
+                    case AxisBaseTablePalette.EPaletteType.Geology:
+                        mgeologyNodeTable[x, y, z] = -1;
+                        return true;
+
+                    case AxisBaseTablePalette.EPaletteType.Biology:
+                        mbiologyNodeTable[x, y, z] = -1;
+                        return true;
                 }
             }
             return false;
         }
-        public bool RemoveNode(int x, int y, int z)
+        public void SetAxisLength(int newX, int newY, int newZ)
         {
-            if(x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
-            {
-                mnodeTable[x, y, z] = -1;
-                return true;
-            }
-            return false;
-        }
-        public void SetXYZLength(int newX, int newY, int newZ)
-        {
-            int[,,] tempNodeTable = new int[newX, newY, newZ];
+            int[,,] tempGeologyNodeTable = new int[newX, newY, newZ];
+            int[,,] tempBiologyNodeTable = new int[newX, newY, newZ];
 
             for (int coord_x = 0; coord_x < ((mxLength < newX) ? mxLength : newX); coord_x++)
             {
@@ -109,35 +142,52 @@ namespace AxisBaseTableManager
                 {
                     for (int coord_z = 0; coord_z < ((mzLength < newZ) ? mzLength : newZ); coord_z++)
                     {
-                        tempNodeTable[coord_x, coord_y, coord_z] = mnodeTable[coord_x, coord_y, coord_z];
+                        tempGeologyNodeTable[coord_x, coord_y, coord_z] = GeologyNodeTable[coord_x, coord_y, coord_z];
+                        tempBiologyNodeTable[coord_x, coord_y, coord_z] = BiologyNodeTable[coord_x, coord_y, coord_z];
                     }
                 }
             }
 
-            mnodeTable = tempNodeTable;
+            mgeologyNodeTable = tempGeologyNodeTable;
+            mbiologyNodeTable = tempBiologyNodeTable;
             mxLength = newX;
             myLength = newY;
             mzLength = newZ;
         }
-        public byte[] GetTableJsonByteData()
+        public byte[] GetJsonByteData()
         {
             return System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this));
         }
     }
     public class AxisBaseTablePalette
     {
-        public class Node
+        public enum EPaletteType
         {
+            Geology = 1,
+            Biology = 2
+        };
+
+        public class GeologyNode
+        {
+            public enum ENodeSideType
+            {
+                TopSide = 1,
+                FrontSide = 2,
+                BehindSide = 3,
+                LeftSide = 4,
+                RightSide = 5
+            };
+
             private string mnodeName;
-            private byte[] mnodePNG;
+            private Dictionary<ENodeSideType, byte[]> mnodePNGs;
 
             private OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
             private string mnodeOrderedTypeKind;
 
-            public Node(string nodeName, in byte[] nodePNG)
+            public GeologyNode(string nodeName)
             {
                 mnodeName = nodeName;
-                mnodePNG = nodePNG;
+                mnodePNGs = new Dictionary<ENodeSideType, byte[]>();
 
                 morderedTypeClassify = new OrderedNodeType.EOrderedTypeClassify();
                 mnodeOrderedTypeKind = default(string);
@@ -147,9 +197,9 @@ namespace AxisBaseTableManager
             {
                 get => mnodeName;
             }
-            public byte[] NodePNG
+            public Dictionary<ENodeSideType, byte[]> NodePNGs
             {
-                get => mnodePNG;
+                get => mnodePNGs;
             }
             public OrderedNodeType.EOrderedTypeClassify OrderedTypeClassify
             {
@@ -160,11 +210,116 @@ namespace AxisBaseTableManager
                 get => mnodeOrderedTypeKind;
             }
 
-            internal void SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
+            public void SetNodeSidePNG(byte[] sidePNGBytes, ENodeSideType nodeSideType)
+            {
+                if(mnodePNGs.ContainsKey(nodeSideType))
+                {
+                    mnodePNGs.Remove(nodeSideType);
+                }
+                mnodePNGs.Add(nodeSideType, sidePNGBytes);
+            }
+            public void SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
             {
                 morderedTypeClassify = orderedTypeClassify;
             }
-            internal void SetNodeOrderedTypeKind(string kind)
+            public void SetNodeOrderedTypeKind(string kind)
+            {
+                mnodeOrderedTypeKind = kind;
+            }
+        }
+        public class BiologyNode
+        {
+            public enum EBiologyType
+            {
+                Dynamic = 1,
+                Static = 2
+            };
+            public enum EMovementTendencyType
+            {
+                Offensive = 1,
+                Defensive = 2,
+                NoReaction = 3,
+                Symbiosis = 4
+            };
+            public enum ENodeSideType
+            {
+                N = 1,
+                S = 2,
+                W = 3,
+                E = 4,
+                NW = 5,
+                NE = 6,
+                SW = 7,
+                SE = 8
+            };
+
+            private string mnodeName;
+            private Dictionary<ENodeSideType, byte[]> mnodePNGs;
+            private EBiologyType mbiologyType;
+            private EMovementTendencyType mmovementTendencyType;
+
+            private OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
+            private string mnodeOrderedTypeKind;
+
+            public BiologyNode(string nodeName)
+            {
+                mnodeName = nodeName;
+                mnodePNGs = new Dictionary<ENodeSideType, byte[]>();
+
+                mbiologyType = new EBiologyType();
+                mmovementTendencyType = new EMovementTendencyType();
+
+                morderedTypeClassify = new OrderedNodeType.EOrderedTypeClassify();
+                mnodeOrderedTypeKind = default(string);
+            }
+
+            public string NodeName
+            {
+                get => mnodeName;
+            }
+            public Dictionary<ENodeSideType, byte[]> NodePNGs
+            {
+                get => mnodePNGs;
+            }
+            public EBiologyType BiologyType
+            {
+                get => mbiologyType;
+            }
+            public EMovementTendencyType MovementTendencyType
+            {
+                get => mmovementTendencyType;
+            }
+            public OrderedNodeType.EOrderedTypeClassify OrderedTypeClassify
+            {
+                get => morderedTypeClassify;
+            }
+            public string NodeOrderedTypeKind
+            {
+                get => mnodeOrderedTypeKind;
+            }
+
+            public void SetNodeSidePNG(byte[] sidePNGBytes, ENodeSideType nodeSideType)
+            {
+                if(mnodePNGs.ContainsKey(nodeSideType))
+                {
+                    mnodePNGs.Remove(nodeSideType);
+                }
+
+                mnodePNGs.Add(nodeSideType, sidePNGBytes);
+            }
+            public void SetBiologyType(EBiologyType biologyType)
+            {
+                mbiologyType = biologyType;
+            }
+            public void SetMovementTendencyType(EMovementTendencyType movementTendencyType)
+            {
+                mmovementTendencyType = movementTendencyType;
+            }
+            public void SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
+            {
+                morderedTypeClassify = orderedTypeClassify;
+            }
+            public void SetNodeOrderedTypeKind(string kind)
             {
                 mnodeOrderedTypeKind = kind;
             }
@@ -172,98 +327,97 @@ namespace AxisBaseTableManager
 
 
 
-        private Dictionary<int, Node> mnodeTable;
-        private List<string> mnodeNames;
+        private Dictionary<int, GeologyNode> mgeologyNodeTable;
+        private Dictionary<int, BiologyNode> mbiologyNodeTable;
+        private List<string> mgeologyNodeNames;
+        private List<string> mbiologyNodeNames;
         private OrderedCube morderedCube;
-        private Node mdefaultNodeKind;
 
 
 
         public AxisBaseTablePalette(in OrderedCube orderedCube)
         {
-            mnodeTable = new Dictionary<int, Node>();
-            mnodeNames = new List<string>();
+            mgeologyNodeTable = new Dictionary<int, GeologyNode>();
+            mbiologyNodeTable = new Dictionary<int, BiologyNode>();
+            mgeologyNodeNames = new List<string>();
+            mbiologyNodeNames = new List<string>();
             morderedCube = orderedCube;
-            mdefaultNodeKind = null;
         }
         public AxisBaseTablePalette(in AxisBaseTablePalette axisBaseTablePalette)
         {
-            mnodeTable = axisBaseTablePalette.NodeTable;
-            mnodeNames = axisBaseTablePalette.NodeNames;
+            mgeologyNodeTable = axisBaseTablePalette.GeologyNodeTable;
+            mbiologyNodeTable = axisBaseTablePalette.BiologyNodeTable;
+            mgeologyNodeNames = axisBaseTablePalette.GeologyNodeNames;
+            mbiologyNodeNames = axisBaseTablePalette.BiologyNodeNames;
             morderedCube = axisBaseTablePalette.OrderedCube;
-            mdefaultNodeKind = axisBaseTablePalette.DefauleNodeKind;
         }
 
-        public Dictionary<int, Node> NodeTable
+        public Dictionary<int, GeologyNode> GeologyNodeTable
         {
-            get => mnodeTable;
+            get => mgeologyNodeTable;
         }
-        public List<string> NodeNames
+        public Dictionary<int, BiologyNode> BiologyNodeTable
         {
-            get => mnodeNames;
+            get => mbiologyNodeTable;
+        }
+        public List<string> GeologyNodeNames
+        {
+            get => mgeologyNodeNames;
+        }
+        public List<string> BiologyNodeNames
+        {
+            get => mbiologyNodeNames;
         }
         public OrderedCube OrderedCube
         {
             get => morderedCube;
         }
-        public Node DefauleNodeKind
-        {
-            get => mdefaultNodeKind;
-        }
 
-        public void AddNode(string nodeName, in byte[] nodePNG)
+        public void AddNode(string nodeName, EPaletteType paletteType)
         {
-            mnodeTable.Add(nodeName.GetHashCode(), new Node(nodeName, nodePNG));
-            mnodeNames.Add(nodeName);
-
-            if(mdefaultNodeKind == null)
+            switch(paletteType)
             {
-                mdefaultNodeKind = mnodeTable[nodeName.GetHashCode()];
+                case EPaletteType.Geology:
+                    mgeologyNodeTable.Add(nodeName.GetHashCode(), new GeologyNode(nodeName));
+                    mgeologyNodeNames.Add(nodeName);
+                    break;
+
+                case EPaletteType.Biology:
+                    mbiologyNodeTable.Add(nodeName.GetHashCode(), new BiologyNode(nodeName));
+                    mbiologyNodeNames.Add(nodeName);
+                    break;
             }
         }
-        public void SetOrderedType(string targetNodeName, string orderedTypeName, OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
+        public bool RemoveNode(string nodeName, EPaletteType paletteType)
         {
-            switch(orderedTypeClassify)
+            switch(paletteType)
             {
-                case OrderedNodeType.EOrderedTypeClassify.Low:
-                    if(morderedCube.OrderedNodeType.LowOrderedNodeType.ContainsKey(orderedTypeName))
+                case EPaletteType.Geology:
+                    if(!mgeologyNodeTable.ContainsKey(nodeName.GetHashCode()))
                     {
-                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.Low);
+                        return false;
                     }
                     else
                     {
-                        return;
+                        mgeologyNodeTable.Remove(nodeName.GetHashCode());
+                        mgeologyNodeNames.Remove(nodeName);
                     }
                     break;
 
-                case OrderedNodeType.EOrderedTypeClassify.Middle:
-                    if(morderedCube.OrderedNodeType.MiddleOrderedNodeType.ContainsKey(orderedTypeName))
+                case EPaletteType.Biology:
+                    if(!mbiologyNodeTable.ContainsKey(nodeName.GetHashCode()))
                     {
-                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.Middle);
+                        return false;
                     }
                     else
                     {
-                        return;
-                    }
-                    break;
-
-                case OrderedNodeType.EOrderedTypeClassify.High:
-                    if(morderedCube.OrderedNodeType.HighOrderedNodeType.ContainsKey(orderedTypeName))
-                    {
-                        mnodeTable[targetNodeName.GetHashCode()].SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify.High);
-                    }
-                    else
-                    {
-                        return;
+                        mbiologyNodeTable.Remove(nodeName.GetHashCode());
+                        mbiologyNodeNames.Remove(nodeName);
                     }
                     break;
             }
-            mnodeTable[targetNodeName.GetHashCode()].SetNodeOrderedTypeKind(orderedTypeName);
-        }
-        public void DeleteNode(string nodeName)
-        {
-            mnodeTable.Remove(nodeName.GetHashCode());
-            mnodeNames.Remove(nodeName);
+
+            return true;
         }
     }
     public class OrderedCube

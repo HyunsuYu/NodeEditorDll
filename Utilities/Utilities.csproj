@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\Private\Private Project\Lab 3\Assets\Plugins\Utilities.dll&quot;" />
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\Private\Private Project\Lab 3\Assets\Plugins\Utilities.dll&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\DirectNodeTableManagerTable\bin\Debug\netcoreapp3.1\Utilities.dll&quot;" />
   </Target>
 
 </Project>

@@ -29,35 +29,87 @@ namespace Utilities
             }
         }
 
-        public static List<EncodingNodeData> GetEncodingNodeDatas(AxisBaseTable axisBaseTable)
+        public static List<EncodingNodeData> GetEncodingNodeDatas(AxisBaseTablePalette axisBaseTablePalette, AxisBaseTablePalette.EPaletteType paletteType)
         {
             List<EncodingNodeData> encodingNodeDatas = new List<EncodingNodeData>();
             int curIndex = 1;
 
-            for(int index = 0; index < axisBaseTable.AxisBaseTablePalette.NodeNames.Count; index++)
+            switch(paletteType)
             {
-                if(axisBaseTable.AxisBaseTablePalette.NodeTable[axisBaseTable.AxisBaseTablePalette.NodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Low)
+                case AxisBaseTablePalette.EPaletteType.Geology:
+                    for (int index = 0; index < axisBaseTablePalette.GeologyNodeNames.Count; index++)
+                    {
+                        if (axisBaseTablePalette.GeologyNodeTable[axisBaseTablePalette.GeologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Low)
+                        {
+                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.GeologyNodeNames[index], GetNextPrimeNumber(curIndex)));
+                            curIndex++;
+                        }
+                    }
+                    for (int index = 0; index < axisBaseTablePalette.GeologyNodeNames.Count; index++)
+                    {
+                        if (axisBaseTablePalette.GeologyNodeTable[axisBaseTablePalette.GeologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Middle)
+                        {
+                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.GeologyNodeNames[index], GetNextPrimeNumber(curIndex)));
+                            curIndex++;
+                        }
+                    }
+                    for (int index = 0; index < axisBaseTablePalette.GeologyNodeNames.Count; index++)
+                    {
+                        if (axisBaseTablePalette.GeologyNodeTable[axisBaseTablePalette.GeologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.High)
+                        {
+                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.GeologyNodeNames[index], GetNextPrimeNumber(curIndex)));
+                            curIndex++;
+                        }
+                    }
+                    break;
+
+                case AxisBaseTablePalette.EPaletteType.Biology:
+                    for (int index = 0; index < axisBaseTablePalette.BiologyNodeNames.Count; index++)
+                    {
+                        if (axisBaseTablePalette.BiologyNodeTable[axisBaseTablePalette.BiologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Low)
+                        {
+                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.BiologyNodeNames[index], GetNextPrimeNumber(curIndex)));
+                            curIndex++;
+                        }
+                    }
+                    for (int index = 0; index < axisBaseTablePalette.BiologyNodeNames.Count; index++)
+                    {
+                        if (axisBaseTablePalette.BiologyNodeTable[axisBaseTablePalette.BiologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Middle)
+                        {
+                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.BiologyNodeNames[index], GetNextPrimeNumber(curIndex)));
+                            curIndex++;
+                        }
+                    }
+                    for (int index = 0; index < axisBaseTablePalette.BiologyNodeNames.Count; index++)
+                    {
+                        if (axisBaseTablePalette.BiologyNodeTable[axisBaseTablePalette.BiologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.High)
+                        {
+                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.BiologyNodeNames[index], GetNextPrimeNumber(curIndex)));
+                            curIndex++;
+                        }
+                    }
+                    break;
+            }
+
+            return encodingNodeDatas;
+        }
+        public static int GetNodePrimeNumber(List<EncodingNodeData> encodingNodeDatas, string nodeName)
+        {
+            for(int index = 0; index < encodingNodeDatas.Count; index++)
+            {
+                if(encodingNodeDatas[index].NodeName == nodeName)
                 {
-                    encodingNodeDatas.Add(new EncodingNodeData(axisBaseTable.AxisBaseTablePalette.NodeNames[index], GetNextPrimeNumber(curIndex)));
-                    curIndex++;
+                    return encodingNodeDatas[index].PrimeNumber;
                 }
             }
-            for(int index = 0; index < axisBaseTable.AxisBaseTablePalette.NodeNames.Count; index++)
-            {
-                if(axisBaseTable.AxisBaseTablePalette.NodeTable[axisBaseTable.AxisBaseTablePalette.NodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Middle)
-                {
-                    encodingNodeDatas.Add(new EncodingNodeData(axisBaseTable.AxisBaseTablePalette.NodeNames[index], GetNextPrimeNumber(curIndex)));
-                    curIndex++;
-                }
-            }
-            for (int index = 0; index < axisBaseTable.AxisBaseTablePalette.NodeNames.Count; index++)
-            {
-                if (axisBaseTable.AxisBaseTablePalette.NodeTable[axisBaseTable.AxisBaseTablePalette.NodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.High)
-                {
-                    encodingNodeDatas.Add(new EncodingNodeData(axisBaseTable.AxisBaseTablePalette.NodeNames[index], GetNextPrimeNumber(curIndex)));
-                    curIndex++;
-                }
-            }
+
+            return -1;
+        }
+        public static List<EncodingNodeData> DisorderNumber(int targetNumber)
+        {
+            List<EncodingNodeData> encodingNodeDatas = new List<EncodingNodeData>();
+
+
 
             return encodingNodeDatas;
         }
