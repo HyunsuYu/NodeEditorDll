@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Security.Cryptography;
 using AxisBaseTableManager;
 
 namespace Utilities
@@ -105,13 +103,45 @@ namespace Utilities
 
             return -1;
         }
-        public static List<EncodingNodeData> DisorderNumber(int targetNumber)
+        public static List<EncodingNodeData> DisorderNumber(List<EncodingNodeData> encodingNodeDatas, int targetNumber)
         {
-            List<EncodingNodeData> encodingNodeDatas = new List<EncodingNodeData>();
+            List<EncodingNodeData> tempEncodingNodeDatas = new List<EncodingNodeData>();
 
-
+            for(int index = 0; index < encodingNodeDatas.Count; index++)
+            {
+                if(targetNumber % encodingNodeDatas[index].PrimeNumber == 0)
+                {
+                    tempEncodingNodeDatas.Add(new EncodingNodeData(encodingNodeDatas[index].NodeName, encodingNodeDatas[index].PrimeNumber));
+                }
+            }
 
             return encodingNodeDatas;
+        }
+        public static float[,] CompressionNodes(int xAxisLength, int yAxisLength, int[,] nodeTable, List<EncodingNodeData> encodingNodeDatas)
+        {
+            if(encodingNodeDatas.Count == 0)
+            {
+                return null;
+            }
+
+            float[,] tempNodeTable = new float[yAxisLength, xAxisLength];
+            int maxMulNumber = 0;
+
+            //  Calculate maxMulNumber
+            for(int index = 0; index < encodingNodeDatas.Count; index++)
+            {
+                maxMulNumber *= encodingNodeDatas[index].PrimeNumber;
+            }
+
+            for(int coord_y = 0; coord_y < yAxisLength; coord_y++)
+            {
+                for(int coord_x = 0; coord_x < xAxisLength; coord_x++)
+                {
+                    tempNodeTable[coord_y, coord_x] = nodeTable[coord_y, coord_x] / maxMulNumber;
+                }
+            }
+
+            return tempNodeTable;
         }
         internal static int GetNextPrimeNumber(int index)
         {

@@ -256,7 +256,8 @@ namespace AxisBaseTableManager
             private string mnodeName;
             private Dictionary<ENodeSideType, byte[]> mnodePNGs;
             private EBiologyType mbiologyType;
-            private EMovementTendencyType mmovementTendencyType;
+            private Dictionary<BiologyNode, EMovementTendencyType> mmovementTendencyTypes;
+            private EMovementTendencyType mdefaultMovementTendencyType;
 
             private OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
             private string mnodeOrderedTypeKind;
@@ -267,7 +268,8 @@ namespace AxisBaseTableManager
                 mnodePNGs = new Dictionary<ENodeSideType, byte[]>();
 
                 mbiologyType = new EBiologyType();
-                mmovementTendencyType = new EMovementTendencyType();
+                mmovementTendencyTypes = new Dictionary<BiologyNode, EMovementTendencyType>();
+                mdefaultMovementTendencyType = new EMovementTendencyType();
 
                 morderedTypeClassify = new OrderedNodeType.EOrderedTypeClassify();
                 mnodeOrderedTypeKind = default(string);
@@ -285,9 +287,13 @@ namespace AxisBaseTableManager
             {
                 get => mbiologyType;
             }
-            public EMovementTendencyType MovementTendencyType
+            public Dictionary<BiologyNode, EMovementTendencyType> MovementTendencyType
             {
-                get => mmovementTendencyType;
+                get => mmovementTendencyTypes;
+            }
+            public EMovementTendencyType DefaultMovementTendencyType
+            {
+                get => mdefaultMovementTendencyType;
             }
             public OrderedNodeType.EOrderedTypeClassify OrderedTypeClassify
             {
@@ -311,10 +317,6 @@ namespace AxisBaseTableManager
             {
                 mbiologyType = biologyType;
             }
-            public void SetMovementTendencyType(EMovementTendencyType movementTendencyType)
-            {
-                mmovementTendencyType = movementTendencyType;
-            }
             public void SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
             {
                 morderedTypeClassify = orderedTypeClassify;
@@ -322,6 +324,21 @@ namespace AxisBaseTableManager
             public void SetNodeOrderedTypeKind(string kind)
             {
                 mnodeOrderedTypeKind = kind;
+            }
+            public void SetMovementTendencyTypeTarget(BiologyNode targetBiologyNode, EMovementTendencyType movementTendencyType)
+            {
+                if(mmovementTendencyTypes.ContainsKey(targetBiologyNode))
+                {
+                    mmovementTendencyTypes[targetBiologyNode] = movementTendencyType;
+                }
+                else
+                {
+                    mmovementTendencyTypes.Add(targetBiologyNode, movementTendencyType);
+                }
+            }
+            public void SetDefaultMovementTendencyType(EMovementTendencyType movementTendencyType)
+            {
+                mdefaultMovementTendencyType = movementTendencyType;
             }
         }
 
