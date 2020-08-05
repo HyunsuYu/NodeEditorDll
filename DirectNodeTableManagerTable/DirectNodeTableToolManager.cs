@@ -62,6 +62,36 @@ public class DirectFullPack
 
         return texture2Ds;
     }
+    public List<FloorTable> GetFloorTable(List<Texture2D> texture2Ds, AxisBaseTablePalette.EPaletteType paletteType)
+    {
+        List<FloorTable> tempFloorTable = new List<FloorTable>();
+
+        for(int index = 0; index < texture2Ds.Count; index++)
+        {
+            int[,] geologyNodeTable = null;
+            int[,] biologyNodeTable = null;
+            float[,] tempGeologyNodeTable = new float[DirectNodeTableCoreInfo.FloorAxisLengths[index].y, DirectNodeTableCoreInfo.FloorAxisLengths[index].x];
+            float[,] tempBiologyNodeTable = new float[DirectNodeTableCoreInfo.FloorAxisLengths[index].y, DirectNodeTableCoreInfo.FloorAxisLengths[index].x];
+            float[,] heightTable = new float[DirectNodeTableCoreInfo.FloorAxisLengths[index].y, DirectNodeTableCoreInfo.FloorAxisLengths[index].x];
+
+            for(int coord_y = 0; coord_y < DirectNodeTableCoreInfo.FloorAxisLengths[index].y; coord_y++)
+            {
+                for(int coord_x = 0; coord_x < DirectNodeTableCoreInfo.FloorAxisLengths[index].x; coord_x++)
+                {
+                    tempGeologyNodeTable[coord_y, coord_x] = texture2Ds[index].GetPixel(coord_x, coord_y).r;
+                    tempBiologyNodeTable[coord_y, coord_x] = texture2Ds[index].GetPixel(coord_x, coord_y).g;
+                    heightTable[coord_y, coord_x] = texture2Ds[index].GetPixel(coord_x, coord_y).b;
+                }
+            }
+
+            geologyNodeTable = NodeEncoding.DecompressionNodes(DirectNodeTableCoreInfo.FloorAxisLengths[index].x, DirectNodeTableCoreInfo.FloorAxisLengths[index].y, tempBiologyNodeTable, DirectNodeTableCoreInfo.GeologyEncodingNodeDatas);
+            biologyNodeTable = NodeEncoding.DecompressionNodes(DirectNodeTableCoreInfo.FloorAxisLengths[index].x, DirectNodeTableCoreInfo.FloorAxisLengths[index].y, tempBiologyNodeTable, DirectNodeTableCoreInfo.BiologyEncodingNodeDatas);
+
+            tempFloorTable.Add(new FloorTable(DirectNodeTableCoreInfo.FloorAxisLengths[index].x, DirectNodeTableCoreInfo.FloorAxisLengths[index].y, geologyNodeTable, biologyNodeTable, heightTable));
+        }
+
+        return tempFloorTable;
+    }
 }
 #endregion
 
@@ -299,6 +329,14 @@ public class FloorTable
         mgeologyNodeTable = new int[Y, X];
         mbiologyNodeTable = new int[Y, X];
         mheightTable = new float[Y, X];
+    }
+    public FloorTable(int x, int y, int[,] geologyNodeTable, int[,] biologyNodeTable, float[,] heightTable)
+    {
+        mgeologyNodeTable = geologyNodeTable;
+        mbiologyNodeTable = biologyNodeTable;
+        mheightTable = heightTable;
+        mx = x;
+        my = y;
     }
 
     public int[,] GeologyNodeTable

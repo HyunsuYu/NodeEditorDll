@@ -137,7 +137,33 @@ namespace Utilities
             {
                 for(int coord_x = 0; coord_x < xAxisLength; coord_x++)
                 {
-                    tempNodeTable[coord_y, coord_x] = nodeTable[coord_y, coord_x] / maxMulNumber;
+                    tempNodeTable[coord_y, coord_x] = (float)(nodeTable[coord_y, coord_x] / maxMulNumber);
+                }
+            }
+
+            return tempNodeTable;
+        }
+        public static int[,] DecompressionNodes(int xAxisLength, int yAxisLength, float[,] nodeTable, List<EncodingNodeData> encodingNodeDatas)
+        {
+            if (encodingNodeDatas.Count == 0)
+            {
+                return null;
+            }
+
+            int[,] tempNodeTable = new int[yAxisLength, xAxisLength];
+            int maxMulNumber = 0;
+
+            //  Calculate maxMulNumber
+            for (int index = 0; index < encodingNodeDatas.Count; index++)
+            {
+                maxMulNumber *= encodingNodeDatas[index].PrimeNumber;
+            }
+
+            for (int coord_y = 0; coord_y < yAxisLength; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < xAxisLength; coord_x++)
+                {
+                    tempNodeTable[coord_y, coord_x] = (int)(nodeTable[coord_y, coord_x] * maxMulNumber);
                 }
             }
 
