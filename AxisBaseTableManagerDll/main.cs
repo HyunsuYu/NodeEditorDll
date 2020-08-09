@@ -8,6 +8,7 @@ namespace AxisBaseTableManager
     {
         private int[,,] mgeologyNodeTable;
         private int[,,] mbiologyNodeTable;
+        private int[,,] mpropNodeTable;
         private AxisBaseTablePalette maxisBaseTablePalette;
         private int mxLength, myLength, mzLength;
 
@@ -21,6 +22,7 @@ namespace AxisBaseTableManager
             mzLength = maxisBaseTablePalette.OrderedCube.Z;
             mgeologyNodeTable = new int[X, Y, Z];
             mbiologyNodeTable = new int[X, Y, Z];
+            mpropNodeTable = new int[X, Y, Z];
             for(int coord_x = 0; coord_x < mxLength; coord_x++)
             {
                 for(int coord_y = 0; coord_y < myLength; coord_y++)
@@ -29,6 +31,7 @@ namespace AxisBaseTableManager
                     {
                         mgeologyNodeTable[coord_x, coord_y, coord_z] = -1;
                         mbiologyNodeTable[coord_x, coord_y, coord_z] = -1;
+                        mpropNodeTable[coord_x, coord_y, coord_z] = -1;
                     }
                 }
             }
@@ -41,6 +44,7 @@ namespace AxisBaseTableManager
             mzLength = z;
             mgeologyNodeTable = new int[X, Y, Z];
             mbiologyNodeTable = new int[X, Y, Z];
+            mpropNodeTable = new int[X, Y, Z];
             for (int coord_x = 0; coord_x < mxLength; coord_x++)
             {
                 for (int coord_y = 0; coord_y < myLength; coord_y++)
@@ -49,6 +53,7 @@ namespace AxisBaseTableManager
                     {
                         mgeologyNodeTable[coord_x, coord_y, coord_z] = -1;
                         mbiologyNodeTable[coord_x, coord_y, coord_z] = -1;
+                        mpropNodeTable[coord_x, coord_y, coord_z] = -1;
                     }
                 }
             }
@@ -57,6 +62,7 @@ namespace AxisBaseTableManager
         {
             mgeologyNodeTable = axisBaseTableManager.GeologyNodeTable;
             mbiologyNodeTable = axisBaseTableManager.BiologyNodeTable;
+            mpropNodeTable = axisBaseTableManager.PropNodeTable;
             maxisBaseTablePalette = axisBaseTableManager.AxisBaseTablePalette;
             mxLength = axisBaseTableManager.X;
             myLength = axisBaseTableManager.Y;
@@ -70,6 +76,10 @@ namespace AxisBaseTableManager
         public int[,,] BiologyNodeTable
         {
             get => mbiologyNodeTable;
+        }
+        public int[,,] PropNodeTable
+        {
+            get => mpropNodeTable;
         }
         public AxisBaseTablePalette AxisBaseTablePalette
         {
@@ -109,6 +119,14 @@ namespace AxisBaseTableManager
                             return true;
                         }
                         return true;
+
+                    case AxisBaseTablePalette.EPaletteType.Prop:
+                        if (maxisBaseTablePalette.PropNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.X - 1) ? maxisBaseTablePalette.OrderedCube.X - 1 : x, (y > maxisBaseTablePalette.OrderedCube.Y - 1) ? maxisBaseTablePalette.OrderedCube.Y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.Z - 1) ? maxisBaseTablePalette.OrderedCube.Z - 1 : z].OrderedTypeClassify)
+                        {
+                            mpropNodeTable[x, y, z] = nodename.GetHashCode();
+                            return true;
+                        }
+                        return true;
                 }
             }
 
@@ -122,12 +140,17 @@ namespace AxisBaseTableManager
                 {
                     case AxisBaseTablePalette.EPaletteType.Geology:
                         mgeologyNodeTable[x, y, z] = -1;
-                        return true;
+                        break;
 
                     case AxisBaseTablePalette.EPaletteType.Biology:
                         mbiologyNodeTable[x, y, z] = -1;
-                        return true;
+                        break;
+
+                    case AxisBaseTablePalette.EPaletteType.Prop:
+                        mpropNodeTable[x, y, z] = -1;
+                        break;
                 }
+                return true;
             }
             return false;
         }
@@ -135,6 +158,7 @@ namespace AxisBaseTableManager
         {
             int[,,] tempGeologyNodeTable = new int[newX, newY, newZ];
             int[,,] tempBiologyNodeTable = new int[newX, newY, newZ];
+            int[,,] tempPropNodeTable = new int[newX, newY, newZ];
 
             for (int coord_x = 0; coord_x < ((mxLength < newX) ? mxLength : newX); coord_x++)
             {
@@ -144,12 +168,14 @@ namespace AxisBaseTableManager
                     {
                         tempGeologyNodeTable[coord_x, coord_y, coord_z] = GeologyNodeTable[coord_x, coord_y, coord_z];
                         tempBiologyNodeTable[coord_x, coord_y, coord_z] = BiologyNodeTable[coord_x, coord_y, coord_z];
+                        tempPropNodeTable[coord_x, coord_y, coord_z] = PropNodeTable[coord_x, coord_y, coord_z];
                     }
                 }
             }
 
             mgeologyNodeTable = tempGeologyNodeTable;
             mbiologyNodeTable = tempBiologyNodeTable;
+            mpropNodeTable = tempPropNodeTable;
             mxLength = newX;
             myLength = newY;
             mzLength = newZ;
@@ -164,7 +190,8 @@ namespace AxisBaseTableManager
         public enum EPaletteType
         {
             Geology = 1,
-            Biology = 2
+            Biology = 2,
+            Prop = 3
         };
 
         public class GeologyNode
@@ -341,13 +368,74 @@ namespace AxisBaseTableManager
                 mdefaultMovementTendencyType = movementTendencyType;
             }
         }
+        public class PropNode
+        {
+            public enum ENodeSideType
+            {
+                Front = 1,
+                Back = 2,
+                Left = 3,
+                Right = 4
+            };
+
+            private string mnodeName;
+            private Dictionary<ENodeSideType, byte[]> mnodePNGs;
+
+            private OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
+            private string mnodeOrderedTypeKind;
+
+            public PropNode(string nodeName)
+            {
+                mnodeName = nodeName;
+                mnodePNGs = new Dictionary<ENodeSideType, byte[]>();
+
+                morderedTypeClassify = new OrderedNodeType.EOrderedTypeClassify();
+                mnodeOrderedTypeKind = default(string);
+            }
+
+            public string NodeName
+            {
+                get => mnodeName;
+            }
+            public Dictionary<ENodeSideType, byte[]> NodePNGs
+            {
+                get => mnodePNGs;
+            }
+            public OrderedNodeType.EOrderedTypeClassify OrderedTypeClassify
+            {
+                get => morderedTypeClassify;
+            }
+            public string NodeOrderedTypeKind
+            {
+                get => mnodeOrderedTypeKind;
+            }
+
+            public void SetNodeSidePNG(byte[] sidePNGBytes, ENodeSideType nodeSideType)
+            {
+                if (mnodePNGs.ContainsKey(nodeSideType))
+                {
+                    mnodePNGs.Remove(nodeSideType);
+                }
+                mnodePNGs.Add(nodeSideType, sidePNGBytes);
+            }
+            public void SetOrderedClassify(OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
+            {
+                morderedTypeClassify = orderedTypeClassify;
+            }
+            public void SetNodeOrderedTypeKind(string kind)
+            {
+                mnodeOrderedTypeKind = kind;
+            }
+        }
 
 
 
         private Dictionary<int, GeologyNode> mgeologyNodeTable;
         private Dictionary<int, BiologyNode> mbiologyNodeTable;
+        private Dictionary<int, PropNode> mpropNodeTable;
         private List<string> mgeologyNodeNames;
         private List<string> mbiologyNodeNames;
+        private List<string> mpropNodeNames;
         private OrderedCube morderedCube;
 
 
@@ -356,16 +444,20 @@ namespace AxisBaseTableManager
         {
             mgeologyNodeTable = new Dictionary<int, GeologyNode>();
             mbiologyNodeTable = new Dictionary<int, BiologyNode>();
+            mpropNodeTable = new Dictionary<int, PropNode>();
             mgeologyNodeNames = new List<string>();
             mbiologyNodeNames = new List<string>();
+            mpropNodeNames = new List<string>();
             morderedCube = orderedCube;
         }
         public AxisBaseTablePalette(in AxisBaseTablePalette axisBaseTablePalette)
         {
             mgeologyNodeTable = axisBaseTablePalette.GeologyNodeTable;
             mbiologyNodeTable = axisBaseTablePalette.BiologyNodeTable;
+            mpropNodeTable = axisBaseTablePalette.PropNodeTable;
             mgeologyNodeNames = axisBaseTablePalette.GeologyNodeNames;
             mbiologyNodeNames = axisBaseTablePalette.BiologyNodeNames;
+            mpropNodeNames = axisBaseTablePalette.PropNodeNames;
             morderedCube = axisBaseTablePalette.OrderedCube;
         }
 
@@ -377,6 +469,10 @@ namespace AxisBaseTableManager
         {
             get => mbiologyNodeTable;
         }
+        public Dictionary<int, PropNode> PropNodeTable
+        {
+            get => mpropNodeTable;
+        }
         public List<string> GeologyNodeNames
         {
             get => mgeologyNodeNames;
@@ -384,6 +480,10 @@ namespace AxisBaseTableManager
         public List<string> BiologyNodeNames
         {
             get => mbiologyNodeNames;
+        }
+        public List<string> PropNodeNames
+        {
+            get => mpropNodeNames;
         }
         public OrderedCube OrderedCube
         {
@@ -402,6 +502,11 @@ namespace AxisBaseTableManager
                 case EPaletteType.Biology:
                     mbiologyNodeTable.Add(nodeName.GetHashCode(), new BiologyNode(nodeName));
                     mbiologyNodeNames.Add(nodeName);
+                    break;
+
+                case EPaletteType.Prop:
+                    mpropNodeTable.Add(nodeName.GetHashCode(), new PropNode(nodeName));
+                    mpropNodeNames.Add(nodeName);
                     break;
             }
         }
@@ -430,6 +535,18 @@ namespace AxisBaseTableManager
                     {
                         mbiologyNodeTable.Remove(nodeName.GetHashCode());
                         mbiologyNodeNames.Remove(nodeName);
+                    }
+                    break;
+
+                case EPaletteType.Prop:
+                    if (!mpropNodeTable.ContainsKey(nodeName.GetHashCode()))
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        mpropNodeTable.Remove(nodeName.GetHashCode());
+                        mpropNodeNames.Remove(nodeName);
                     }
                     break;
             }
