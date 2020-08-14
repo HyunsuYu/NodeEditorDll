@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using AxisBaseTableManager;
 using UnityEngine;
-using UnityEngine.UIElements;
 using Utilities;
 
 namespace DirectNodeEditor
@@ -94,7 +92,7 @@ namespace DirectNodeEditor
                 biologyNodeTable = NodeEncoding.DecompressionNodes(DirectNodeTableCoreInfo.FloorAbstractAxisLengths[index].x, DirectNodeTableCoreInfo.FloorAbstractAxisLengths[index].y, tempBiologyNodeTable, DirectNodeTableCoreInfo.BiologyEncodingNodeDatas);
                 propNodeTable = NodeEncoding.DecompressionNodes(DirectNodeTableCoreInfo.FloorAbstractAxisLengths[index].x, DirectNodeTableCoreInfo.FloorAbstractAxisLengths[index].y, tempPropNodeTable, DirectNodeTableCoreInfo.PropEncodingNodeDatas);
 
-                tempFloorTable.Add(new FloorTable(DirectNodeTableCoreInfo.FloorAbstractAxisLengths[index], DirectNodeTableCoreInfo.FloorDetailAxisLengths[index], geologyNodeTable, biologyNodeTable, propNodeTable, heightTable));
+                tempFloorTable.Add(new FloorTable(DirectNodeTableCoreInfo.FloorAbstractAxisLengths[index], DirectNodeTableCoreInfo.FloorDetailAxisLengths[index], DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength, index, geologyNodeTable, biologyNodeTable, propNodeTable, heightTable));
             }
 
             return tempFloorTable;
@@ -105,11 +103,49 @@ namespace DirectNodeEditor
     #region Floors
     public class DirectNodeTable
     {
-        public struct InputPack
+        public struct InputPack_Auto
+        {
+            private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
+            private bool mbisGenerateSinkHole;
+            private bool mbisGenerateLava;
+            private bool mbisGenerateGlacier;
+            private bool mbisGenerateEitr;
+
+            public InputPack_Auto(DirectNodeTableCoreInfo directNodeTableCoreInfo, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr)
+            {
+                mdirectNodeTableCoreInfo = directNodeTableCoreInfo;
+                mbisGenerateSinkHole = bisGenerateSinkHole;
+                mbisGenerateLava = bisGenerateLava;
+                mbisGenerateGlacier = bisGenerateGlacier;
+                mbisGenerateEitr = bisGenerateEitr;
+            }
+
+            public DirectNodeTableCoreInfo DirectNodeTableCoreInfo
+            {
+                get => mdirectNodeTableCoreInfo;
+            }
+            public bool IsGenerateSinkHole
+            {
+                get => mbisGenerateSinkHole;
+            }
+            public bool IsGenerateLava
+            {
+                get => mbisGenerateLava;
+            }
+            public bool IsGenerateGlacier
+            {
+                get => mbisGenerateGlacier;
+            }
+            public bool IsGenerateEitr
+            {
+                get => mbisGenerateEitr;
+            }
+        }
+        public struct InputPack_Manual
         {
             private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
 
-            public InputPack(DirectNodeTableCoreInfo directNodeTableCoreInfo)
+            public InputPack_Manual(DirectNodeTableCoreInfo directNodeTableCoreInfo)
             {
                 mdirectNodeTableCoreInfo = directNodeTableCoreInfo;
             }
@@ -127,26 +163,28 @@ namespace DirectNodeEditor
 
 
 
-        public DirectNodeTable(InputPack inputPack, bool isAuto)
+        public DirectNodeTable(InputPack_Auto inputPack)
         {
             mfloorTable = new List<FloorTable>();
             mdirectNodeTableCoreInfo = inputPack.DirectNodeTableCoreInfo;
 
-            if (isAuto)
+            Texture2D texture = GenerateMapBoundaryNoiseMap();
+
+            float sum = 0;
+            for (int floorIndex = 0; floorIndex < DefaultFloorDepth; floorIndex++)
             {
-                Texture2D texture = GenerateMapBoundaryNoiseMap();
-
-                float sum = 0;
-                for (int floorIndex = 0; floorIndex < DefaultFloorDepth; floorIndex++)
-                {
-                    sum += GetCutLine(floorIndex);
-                }
-
-                for (int floorIndex = 0; floorIndex < DefaultFloorDepth; floorIndex++)
-                {
-                    mfloorTable.Add(new DirectNodeEditor.FloorTable(new DirectNodeEditor.FloorTable.InputPack_Auto(GetCutLine(floorIndex) / sum, texture)));
-                }
+                sum += GetCutLine(floorIndex);
             }
+
+            for (int floorIndex = 0; floorIndex < DefaultFloorDepth; floorIndex++)
+            {
+                mfloorTable.Add(new DirectNodeEditor.FloorTable(new DirectNodeEditor.FloorTable.InputPack_Auto(GetCutLine(floorIndex) / sum, texture, inputPack.IsGenerateSinkHole, inputPack.IsGenerateLava, inputPack.IsGenerateGlacier, inputPack.IsGenerateEitr, floorIndex, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength)));
+            }
+        }
+        public DirectNodeTable(InputPack_Manual inputPack)
+        {
+            mfloorTable = new List<FloorTable>();
+            mdirectNodeTableCoreInfo = inputPack.DirectNodeTableCoreInfo;
         }
 
         public List<FloorTable> FloorTable
@@ -203,26 +241,15 @@ namespace DirectNodeEditor
 
             return mfloorTable[floorIndex].RemoveNode(abstractCoord, detailCoord, targetNodePrimeNumber, paletteType);
         }
-        public bool SetFloorAxisLength(int floorIndex, int x, int y)
-        {
-            if (floorIndex < 0 || floorIndex >= mfloorTable.Count)
-            {
-                return false;
-            }
-
-            mfloorTable[floorIndex].SetAxisLength(x, y);
-
-            return true;
-        }
         public void AddFloor()
         {
-            mfloorTable.Add(new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisAbstractLength, DirectNodeEditor.FloorTable.DefaultAxisAbstractLength), new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisDetailLength, DirectNodeEditor.FloorTable.DefaultAxisDetailLength))));
+            mfloorTable.Add(new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisAbstractLength, DirectNodeEditor.FloorTable.DefaultAxisAbstractLength), new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisDetailLength, DirectNodeEditor.FloorTable.DefaultAxisDetailLength), mfloorTable.Count, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength)));
             mdirectNodeTableCoreInfo.FloorAbstractAxisLengths.Add(new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisAbstractLength, DirectNodeEditor.FloorTable.DefaultAxisAbstractLength));
             mdirectNodeTableCoreInfo.FloorDetailAxisLengths.Add(new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisDetailLength, DirectNodeEditor.FloorTable.DefaultAxisDetailLength));
         }
         public void AddFloor(Vector2Int abstractAxisLength, Vector2Int detailAxisLength)
         {
-            mfloorTable.Add(new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(abstractAxisLength, detailAxisLength)));
+            mfloorTable.Add(new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(abstractAxisLength, detailAxisLength, mfloorTable.Count, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength)));
             mdirectNodeTableCoreInfo.FloorAbstractAxisLengths.Add(abstractAxisLength);
             mdirectNodeTableCoreInfo.FloorDetailAxisLengths.Add(detailAxisLength);
         }
@@ -233,7 +260,7 @@ namespace DirectNodeEditor
                 return false;
             }
 
-            mfloorTable.Insert(index, new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisAbstractLength, DirectNodeEditor.FloorTable.DefaultAxisAbstractLength), new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisDetailLength, DirectNodeEditor.FloorTable.DefaultAxisDetailLength))));
+            mfloorTable.Insert(index, new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisAbstractLength, DirectNodeEditor.FloorTable.DefaultAxisAbstractLength), new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisDetailLength, DirectNodeEditor.FloorTable.DefaultAxisDetailLength), index - 1, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength)));
             mdirectNodeTableCoreInfo.FloorAbstractAxisLengths.Insert(index, new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisAbstractLength, DirectNodeEditor.FloorTable.DefaultAxisAbstractLength));
             mdirectNodeTableCoreInfo.FloorDetailAxisLengths.Insert(index, new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisDetailLength, DirectNodeEditor.FloorTable.DefaultAxisDetailLength));
 
@@ -246,7 +273,7 @@ namespace DirectNodeEditor
                 return false;
             }
 
-            mfloorTable.Insert(index, new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(abstractAxisLength, detailAxisLength)));
+            mfloorTable.Insert(index, new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(abstractAxisLength, detailAxisLength, index - 1, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength)));
             mdirectNodeTableCoreInfo.FloorAbstractAxisLengths.Insert(index, abstractAxisLength);
             mdirectNodeTableCoreInfo.FloorDetailAxisLengths.Insert(index, detailAxisLength);
 
@@ -263,6 +290,17 @@ namespace DirectNodeEditor
             mdirectNodeTableCoreInfo.FloorAbstractAxisLengths.Remove(mdirectNodeTableCoreInfo.FloorAbstractAxisLengths[index]);
 
             return false;
+        }
+        public bool SetFloorAbstractAxisLength(int index, Vector2Int newAbstractLength, FloorTable.EAnchor anchor)
+        {
+            if (index < 0 || index > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[index].SetAbstractAxisLength(newAbstractLength, anchor);
+
+            return true;
         }
 
         internal Texture2D GenerateMapBoundaryNoiseMap()
@@ -303,9 +341,10 @@ namespace DirectNodeEditor
                         noiseValue = 1.0f;
                     }
 
-                    texture.SetPixel(coord_x, coord_y, new Color(noiseValue, 0.0f, 0.0f));
+                    texture.SetPixel(coord_x, coord_y, new Color(noiseValue, noiseValue, noiseValue));
                 }
             }
+            
 
             random = null;
             return texture;
@@ -438,23 +477,51 @@ namespace DirectNodeEditor
     #region Floor
     public class FloorTable
     {
+        public enum EAnchor
+        {
+            TopLeft = 1,
+            TopStraight = 2,
+            TopRight = 3,
+            MiddleLeft = 4,
+            Center = 5,
+            MiddleRight = 6,
+            BottomLeft = 7,
+            BottomStraight = 8,
+            BottomRight = 9
+        };
+
         public class Node
         {
             private int[,] mgeologyNodeTable;
             private int[,] mbiologyNodeTable;
             private int[,] mpropNodeTable;
             private float[,] mheightTable;
-            private Vector2Int mdetailAxisLength;
+            private int[,] mfundamentalElementsTable;
+            private int[,] mfundamentalElementsInflunceTable;
 
 
 
             public Node()
             {
-                mgeologyNodeTable = new int[FloorTable.DefaultAxisDetailLength, FloorTable.DefaultAxisDetailLength];
-                mbiologyNodeTable = new int[FloorTable.DefaultAxisDetailLength, FloorTable.DefaultAxisDetailLength];
-                mpropNodeTable = new int[FloorTable.DefaultAxisDetailLength, FloorTable.DefaultAxisDetailLength];
-                mheightTable = new float[FloorTable.DefaultAxisDetailLength, FloorTable.DefaultAxisDetailLength];
-                mdetailAxisLength = new Vector2Int(FloorTable.DefaultAxisDetailLength, FloorTable.DefaultAxisDetailLength);
+                mgeologyNodeTable = new int[DefaultAxisDetailLength, DefaultAxisDetailLength];
+                mbiologyNodeTable = new int[DefaultAxisDetailLength, DefaultAxisDetailLength];
+                mpropNodeTable = new int[DefaultAxisDetailLength, DefaultAxisDetailLength];
+                mheightTable = new float[DefaultAxisDetailLength, DefaultAxisDetailLength];
+                mfundamentalElementsTable = new int[DefaultAxisDetailLength, DefaultAxisDetailLength];
+                mfundamentalElementsInflunceTable = new int[DefaultAxisDetailLength, DefaultAxisDetailLength];
+
+                for(int coord_y = 0; coord_y < DefaultAxisDetailLength; coord_y++)
+                {
+                    for(int coord_x = 0; coord_x < DefaultAxisDetailLength; coord_x++)
+                    {
+                        mgeologyNodeTable[coord_y, coord_x] = 1;
+                        mbiologyNodeTable[coord_y, coord_x] = 1;
+                        mpropNodeTable[coord_y, coord_x] = 1;
+                        mheightTable[coord_y, coord_x] = 0.0f;
+                        mfundamentalElementsTable[coord_y, coord_x] = 1;
+                        mfundamentalElementsInflunceTable[coord_y, coord_x] = 1;
+                    }
+                }
             }
             public Node(Vector2Int detailAxisLength)
             {
@@ -462,12 +529,21 @@ namespace DirectNodeEditor
                 mbiologyNodeTable = new int[detailAxisLength.y, detailAxisLength.x];
                 mpropNodeTable = new int[detailAxisLength.y, detailAxisLength.x];
                 mheightTable = new float[detailAxisLength.y, detailAxisLength.x];
-                mdetailAxisLength = detailAxisLength;
-            }
+                mfundamentalElementsTable = new int[detailAxisLength.y, detailAxisLength.x];
+                mfundamentalElementsInflunceTable = new int[detailAxisLength.y, detailAxisLength.x];
 
-            public Vector2Int DetailAxisLength
-            {
-                get => mdetailAxisLength;
+                for (int coord_y = 0; coord_y < detailAxisLength.y; coord_y++)
+                {
+                    for (int coord_x = 0; coord_x < detailAxisLength.x; coord_x++)
+                    {
+                        mgeologyNodeTable[coord_y, coord_x] = 1;
+                        mbiologyNodeTable[coord_y, coord_x] = 1;
+                        mpropNodeTable[coord_y, coord_x] = 1;
+                        mheightTable[coord_y, coord_x] = 0.0f;
+                        mfundamentalElementsTable[coord_y, coord_x] = 1;
+                        mfundamentalElementsInflunceTable[coord_y, coord_x] = 1;
+                    }
+                }
             }
 
             internal int[,] GeologyNodeTable
@@ -490,17 +566,39 @@ namespace DirectNodeEditor
                 get => mheightTable;
                 set => mheightTable = value;
             }
+            internal int[,] FundamentalElementsTable
+            {
+                get => mfundamentalElementsTable;
+                set => mfundamentalElementsTable = value;
+            }
+            internal int[,] FundamentalElementsInflunceTable
+            {
+                get => mfundamentalElementsInflunceTable;
+                set => mfundamentalElementsInflunceTable = value;
+            }
         }
 
         public struct InputPack_Auto
         {
             private float mnoiseMapCutLine;
             private Texture2D mnoiseTexture;
+            private bool mbisGenerateSinkHole;
+            private bool mbisGenerateLava;
+            private bool mbisGenerateGlacier;
+            private bool mbisGenerateEitr;
+            private int mfloorDepth;
+            private Vector3Int mfundamentalInfluenceRadius;
 
-            public InputPack_Auto(float noiseMapCutLine, Texture2D noiseTexture)
+            public InputPack_Auto(float noiseMapCutLine, Texture2D noiseTexture, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr, int floorDepth, Vector3Int fundamentalInfluenceRadius)
             {
                 mnoiseMapCutLine = noiseMapCutLine;
                 mnoiseTexture = noiseTexture;
+                mbisGenerateSinkHole = bisGenerateSinkHole;
+                mbisGenerateLava = bisGenerateLava;
+                mbisGenerateGlacier = bisGenerateGlacier;
+                mbisGenerateEitr = bisGenerateEitr;
+                mfloorDepth = floorDepth;
+                mfundamentalInfluenceRadius = fundamentalInfluenceRadius;
             }
 
             public float NoiseMapCutLine
@@ -511,16 +609,44 @@ namespace DirectNodeEditor
             {
                 get => mnoiseTexture;
             }
+            public bool IsGenerateSinkHole
+            {
+                get => mbisGenerateSinkHole;
+            }
+            public bool IsGenerateLava
+            {
+                get => mbisGenerateLava;
+            }
+            public bool IsGenerateGlacier
+            {
+                get => mbisGenerateGlacier;
+            }
+            public bool IsGenerateEitr
+            {
+                get => mbisGenerateEitr;
+            }
+            public int FloorDepth
+            {
+                get => mfloorDepth;
+            }
+            public Vector3Int FundamentalInfluenceRadius
+            {
+                get => mfundamentalInfluenceRadius;
+            }
         }
         public struct InputPack_Manual
         {
             private Vector2Int mabstractAxisLength;
             private Vector2Int mdetailAxisLength;
+            private int mfloorDepth;
+            private Vector3Int mfundamentalInfluenceRadius;
 
-            public InputPack_Manual(Vector2Int abstractAxisLength, Vector2Int detailAxisLength)
+            public InputPack_Manual(Vector2Int abstractAxisLength, Vector2Int detailAxisLength, int floorDepth, Vector3Int fundamentalInfluenceRadius)
             {
                 mabstractAxisLength = abstractAxisLength;
                 mdetailAxisLength = detailAxisLength;
+                mfloorDepth = floorDepth;
+                mfundamentalInfluenceRadius = fundamentalInfluenceRadius;
             }
 
             public Vector2Int AbstractAxisLength
@@ -531,17 +657,31 @@ namespace DirectNodeEditor
             {
                 get => mdetailAxisLength;
             }
+            public int FloorDepth
+            {
+                get => mfloorDepth;
+            }
+            public Vector3Int FundamentalInfluenceRadius
+            {
+                get => mfundamentalInfluenceRadius;
+            }
         }
 
 
 
         private Node[,] mnodeTable;
         private Vector2Int mabstractAxisLength;
+        private Vector2Int mdetailAxisLength;
+        private int mfloorDepth;
+        private Vector3Int mfundamentalInfluenceRadius;
 
 
 
         public FloorTable(InputPack_Auto inputPack)
         {
+            mfloorDepth = inputPack.FloorDepth;
+            mfundamentalInfluenceRadius = inputPack.FundamentalInfluenceRadius;
+
             mabstractAxisLength = new Vector2Int(inputPack.NoiseTexture.width, inputPack.NoiseTexture.height);
             mnodeTable = new Node[AbstractAxisLength.y, AbstractAxisLength.x];
 
@@ -551,48 +691,71 @@ namespace DirectNodeEditor
             {
                 for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
-                    mnodeTable[coord_y, coord_x] = new Node(new Vector2Int(DefaultAxisDetailLength, DefaultAxisDetailLength));
+                    mnodeTable[coord_y, coord_x] = new Node();
                 }
             }
 
             CalculateFloorBoundary(ref blankTable, inputPack);
 
-            //  do something
+            DetermineTableheight();
+
+            if(inputPack.IsGenerateLava)
+            {
+                DetermineLava();
+            }
+            if(inputPack.IsGenerateGlacier)
+            {
+                DetermineGlacier();
+            }
+            if(inputPack.IsGenerateEitr)
+            {
+                DetermineEitr();
+            }
+            if(inputPack.IsGenerateSinkHole)
+            {
+                DetermineSinkHole();
+            }
 
         }
         public FloorTable(InputPack_Manual inputPack)
         {
+            mfloorDepth = inputPack.FloorDepth;
+            mfundamentalInfluenceRadius = inputPack.FundamentalInfluenceRadius;
+
             mabstractAxisLength = inputPack.AbstractAxisLength;
             mnodeTable = new Node[AbstractAxisLength.y, AbstractAxisLength.x];
 
-            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
-                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
                     mnodeTable[coord_y, coord_x] = new Node(inputPack.DetailAxisLength);
                 }
             }
         }
-        public FloorTable(Vector2Int abstractAxisLength, Vector2Int detailAxisLength, int[,] geologyNodeTable, int[,] biologyNodeTable, int[,] propNodeTable, float[,] heightTable)
+        public FloorTable(Vector2Int abstractAxisLength, Vector2Int detailAxisLength, Vector3Int fundamentalInfluenceRadius, int floorDepth, int[,] geologyNodeTable, int[,] biologyNodeTable, int[,] propNodeTable, float[,] heightTable)
         {
+            mfloorDepth = floorDepth;
+            mfundamentalInfluenceRadius = fundamentalInfluenceRadius;
+
             mabstractAxisLength = abstractAxisLength;
             mnodeTable = new Node[AbstractAxisLength.y, AbstractAxisLength.x];
-            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
-                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
                     mnodeTable[coord_y, coord_x] = new Node(new Vector2Int(AbstractAxisLength.x, AbstractAxisLength.y));
                 }
             }
 
             int detailCoord_x = 0, detailCoord_y = 0;
-            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
-                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
-                    for(int i = 0; i < detailAxisLength.y; i++, detailCoord_y++)
+                    for (int i = 0; i < detailAxisLength.y; i++, detailCoord_y++)
                     {
-                        for(int j = 0; j < detailAxisLength.x; j++, detailCoord_x++)
+                        for (int j = 0; j < detailAxisLength.x; j++, detailCoord_x++)
                         {
                             mnodeTable[coord_y, coord_x].GeologyNodeTable[i, j] = geologyNodeTable[detailCoord_y, detailCoord_x];
                             mnodeTable[coord_y, coord_x].BiologyNodeTable[i, j] = biologyNodeTable[detailCoord_y, detailCoord_x];
@@ -612,14 +775,42 @@ namespace DirectNodeEditor
         {
             get => mabstractAxisLength;
         }
+        public Vector2Int DetailAxisLength
+        {
+            get => mdetailAxisLength;
+        }
+        public int FloorDepth
+        {
+            get => mfloorDepth;
+        }
+        public Vector3Int FundamentalInfluenceRadius
+        {
+            get => mfundamentalInfluenceRadius;
+        }
 
-        internal static float DownerValueBoundary
+        internal float DownerValueBoundary
         {
             get => 0.1f;
         }
-        internal static float UpperValueBoundary
+        internal float UpperValueBoundary
         {
             get => 0.9f;
+        }
+        internal float DefaultSinkHoleCutLine
+        {
+            get => 0.05f;
+        }
+        internal Vector2 LavaArea
+        {
+            get => new Vector2(0.0f, 0.1f);
+        }
+        internal Vector2 GlacierArea
+        {
+            get => new Vector2(0.75f, 1.0f);
+        }
+        internal Vector2 EitrArea
+        {
+            get => new Vector2(0.35f, 0.65f);
         }
 
         public static int DefaultAxisAbstractLength
@@ -637,7 +828,7 @@ namespace DirectNodeEditor
             {
                 return false;
             }
-            if(detailCoord.x < 0 || detailCoord.x > mnodeTable[abstractCoord.y, abstractCoord.x].DetailAxisLength.x - 1 || detailCoord.y < 0 || detailCoord.y > mnodeTable[abstractCoord.y, abstractCoord.x].DetailAxisLength.y - 1)
+            if (detailCoord.x < 0 || detailCoord.x > DetailAxisLength.x - 1 || detailCoord.y < 0 || detailCoord.y > DetailAxisLength.y - 1)
             {
                 return false;
             }
@@ -665,7 +856,7 @@ namespace DirectNodeEditor
             {
                 return false;
             }
-            if (detailCoord.x < 0 || detailCoord.x > mnodeTable[abstractCoord.y, abstractCoord.x].DetailAxisLength.x - 1 || detailCoord.y < 0 || detailCoord.y > mnodeTable[abstractCoord.y, abstractCoord.x].DetailAxisLength.y - 1)
+            if (detailCoord.x < 0 || detailCoord.x > DetailAxisLength.x - 1 || detailCoord.y < 0 || detailCoord.y > DetailAxisLength.y - 1)
             {
                 return false;
             }
@@ -688,7 +879,7 @@ namespace DirectNodeEditor
             {
                 return false;
             }
-            if (detailCoord.x < 0 || detailCoord.x > mnodeTable[abstractCoord.y, abstractCoord.x].DetailAxisLength.x - 1 || detailCoord.y < 0 || detailCoord.y > mnodeTable[abstractCoord.y, abstractCoord.x].DetailAxisLength.y - 1)
+            if (detailCoord.x < 0 || detailCoord.x > DetailAxisLength.x - 1 || detailCoord.y < 0 || detailCoord.y > DetailAxisLength.y - 1)
             {
                 return false;
             }
@@ -710,46 +901,54 @@ namespace DirectNodeEditor
 
             return true;
         }
-        internal void SetAxisLength(int x, int y)
+        internal void SetAbstractAxisLength(Vector2Int newAbstractLength, EAnchor anchor)
         {
-            Node[,] tempNodeTable = new Node[y, x];
-
-            for (int coord_y = 0; coord_y < (AbstractAxisLength.y < y ? AbstractAxisLength.y : y); coord_y++)
+            Node[,] tempNodeTable = new Node[newAbstractLength.y, newAbstractLength.x];
+            for(int coord_y = 0; coord_y < newAbstractLength.y; coord_y++)
             {
-                for (int coord_x = 0; coord_x < (AbstractAxisLength.x < x ? AbstractAxisLength.x : x); coord_x++)
+                for(int coord_x = 0; coord_x < newAbstractLength.x; coord_x++)
                 {
-                    tempNodeTable[coord_y, coord_x] = NodeTable[coord_y, coord_x];
+                    tempNodeTable[coord_y, coord_x] = new Node(DetailAxisLength);
                 }
             }
 
-            mnodeTable = tempNodeTable;
-            mabstractAxisLength = new Vector2Int(x, y);
-        }
-        internal void GenerateHeightTable(List<float> overlapScales, float powNum)
-        {
-            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            switch(anchor)
             {
-                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
-                {
-                    //  noise generating
-                    float noiseValue = 0.0f;
+                case EAnchor.TopLeft:
 
-                    for (int index = 0; index < overlapScales.Count; index++)
-                    {
-                        noiseValue += 1 / overlapScales[index] * Mathf.PerlinNoise(coord_x / AbstractAxisLength.x * overlapScales[index], coord_y / AbstractAxisLength.y * overlapScales[index]);
-                    }
-                    noiseValue = (float)Math.Pow(noiseValue, powNum);
+                    break;
 
-                    if (noiseValue < 0.0f)
-                    {
-                        noiseValue = 0.0f;
-                    }
-                    else if (noiseValue > 1.0f)
-                    {
-                        noiseValue = 1.0f;
-                    }
+                case EAnchor.TopStraight:
 
-                }
+                    break;
+
+                case EAnchor.TopRight:
+
+                    break;
+
+                case EAnchor.MiddleLeft:
+
+                    break;
+
+                case EAnchor.Center:
+
+                    break;
+
+                case EAnchor.MiddleRight:
+
+                    break;
+
+                case EAnchor.BottomLeft:
+
+                    break;
+
+                case EAnchor.BottomStraight:
+
+                    break;
+
+                case EAnchor.BottomRight:
+
+                    break;
             }
         }
         internal Texture2D BakeToTexture2D(DirectNodeTableCoreInfo directNodeTableCoreInfo)
@@ -766,13 +965,13 @@ namespace DirectNodeEditor
             float[,] heightTable = new float[AbstractAxisLength.y, AbstractAxisLength.x];
 
             int realCoord_x = 0, realCoord_y = 0;
-            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
-                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
-                    for(int detailCoord_y = 0; detailCoord_y < mnodeTable[coord_y, coord_x].DetailAxisLength.y; detailCoord_y++, realCoord_y++)
+                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++, realCoord_y++)
                     {
-                        for(int detailCoord_x = 0; detailCoord_x < mnodeTable[coord_y, coord_x].DetailAxisLength.x; detailCoord_x++, realCoord_x++)
+                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++, realCoord_x++)
                         {
                             geologyIntTable[realCoord_y, realCoord_x] = mnodeTable[coord_y, coord_x].GeologyNodeTable[detailCoord_y, detailCoord_x];
                             biologyIntTable[realCoord_y, realCoord_x] = mnodeTable[coord_y, coord_x].BiologyNodeTable[detailCoord_y, detailCoord_x];
@@ -798,7 +997,6 @@ namespace DirectNodeEditor
 
             return texture2D;
         }
-
         internal void CalculateFloorBoundary(ref bool[,] blankTable, in InputPack_Auto inputPack)
         {
             float curRealCutLine = inputPack.NoiseMapCutLine * (UpperValueBoundary - DownerValueBoundary);
@@ -818,24 +1016,24 @@ namespace DirectNodeEditor
         }
         internal void SetBlankFalseEdgyNodes(ref bool[,] blankTable)
         {
-            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
-                if(blankTable[coord_y, 0] == true)
+                if (blankTable[coord_y, 0] == true)
                 {
                     SearchNodeAndSetFalse(ref blankTable, 0, coord_y);
                 }
-                if(blankTable[coord_y, AbstractAxisLength.x - 1] == true)
+                if (blankTable[coord_y, AbstractAxisLength.x - 1] == true)
                 {
                     SearchNodeAndSetFalse(ref blankTable, AbstractAxisLength.x - 1, coord_y);
                 }
             }
-            for(int coord_x = 1; coord_x < AbstractAxisLength.x - 1; coord_x++)
+            for (int coord_x = 1; coord_x < AbstractAxisLength.x - 1; coord_x++)
             {
-                if(blankTable[0, coord_x] == true)
+                if (blankTable[0, coord_x] == true)
                 {
                     SearchNodeAndSetFalse(ref blankTable, coord_x, 0);
                 }
-                if(blankTable[AbstractAxisLength.y - 1, coord_x] == true)
+                if (blankTable[AbstractAxisLength.y - 1, coord_x] == true)
                 {
                     SearchNodeAndSetFalse(ref blankTable, coord_x, AbstractAxisLength.y - 1);
                 }
@@ -843,7 +1041,7 @@ namespace DirectNodeEditor
         }
         internal void SearchNodeAndSetFalse(ref bool[,] blankTable, int x, int y)
         {
-            if(blankTable[y, x])
+            if (blankTable[y, x])
             {
                 return;
             }
@@ -852,14 +1050,14 @@ namespace DirectNodeEditor
                 blankTable[y, x] = true;
             }
 
-            if(x == 0)
+            if (x == 0)
             {
-                if(y == 0)
+                if (y == 0)
                 {
                     SearchNodeAndSetFalse(ref blankTable, x + 1, y);
                     SearchNodeAndSetFalse(ref blankTable, x, y + 1);
                 }
-                else if(y == AbstractAxisLength.y - 1)
+                else if (y == AbstractAxisLength.y - 1)
                 {
                     SearchNodeAndSetFalse(ref blankTable, x + 1, y);
                     SearchNodeAndSetFalse(ref blankTable, x, y - 1);
@@ -871,14 +1069,14 @@ namespace DirectNodeEditor
                     SearchNodeAndSetFalse(ref blankTable, x, y + 1);
                 }
             }
-            else if(x == AbstractAxisLength.x - 1)
+            else if (x == AbstractAxisLength.x - 1)
             {
-                if(y == 0)
+                if (y == 0)
                 {
                     SearchNodeAndSetFalse(ref blankTable, x - 1, y);
                     SearchNodeAndSetFalse(ref blankTable, x, y + 1);
                 }
-                else if(y == AbstractAxisLength.y - 1)
+                else if (y == AbstractAxisLength.y - 1)
                 {
                     SearchNodeAndSetFalse(ref blankTable, x - 1, y);
                     SearchNodeAndSetFalse(ref blankTable, x, y - 1);
@@ -910,6 +1108,400 @@ namespace DirectNodeEditor
                     SearchNodeAndSetFalse(ref blankTable, x, y + 1);
                     SearchNodeAndSetFalse(ref blankTable, x - 1, y);
                     SearchNodeAndSetFalse(ref blankTable, x + 1, y);
+                }
+            }
+        }
+        internal void DetermineTableheight()
+        {
+            Texture2D texture = GenerateNoiseMapTexture();
+
+            int realCoord_x = 0, realCoord_y = 0;
+            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    for(int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++, realCoord_y++)
+                    {
+                        for(int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++, realCoord_x++)
+                        {
+                            mnodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x] = texture.GetPixel(realCoord_x, realCoord_y).r;
+                        }
+                    }
+                }
+            }
+        }
+        internal Texture2D GenerateNoiseMapTexture()
+        {
+            Texture2D texture = new Texture2D(AbstractAxisLength.x * DetailAxisLength.x, AbstractAxisLength.y * DetailAxisLength.y);
+
+            List<float> overlapScales = new List<float>();
+            float powNum = 0;
+
+            System.Random random = new System.Random();
+            int overlapCount = random.Next(2, 4);
+
+            for (int i = 0; i < overlapCount; i++)
+            {
+                overlapScales.Add(UnityEngine.Random.Range(0.1f, 1.0f));
+            }
+            powNum = UnityEngine.Random.Range(2.0f, 4.0f);
+
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y * DetailAxisLength.y; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x * DetailAxisLength.x; coord_x++)
+                {
+                    //  noise generating
+                    float noiseValue = 0.0f;
+
+                    for (int index = 0; index < overlapScales.Count; index++)
+                    {
+                        noiseValue += 1 / overlapScales[index] * Mathf.PerlinNoise(coord_x / DirectNodeEditor.FloorTable.DefaultAxisAbstractLength * overlapScales[index], coord_y / DirectNodeEditor.FloorTable.DefaultAxisAbstractLength * overlapScales[index]);
+                    }
+                    noiseValue = (float)Math.Pow(noiseValue, powNum);
+
+                    if (noiseValue < 0.0f)
+                    {
+                        noiseValue = 0.0f;
+                    }
+                    else if (noiseValue > 1.0f)
+                    {
+                        noiseValue = 1.0f;
+                    }
+
+                    texture.SetPixel(coord_x, coord_y, new Color(noiseValue, noiseValue, noiseValue));
+                }
+            }
+            texture.Apply();
+
+            random = null;
+            return texture;
+        }
+        public void DetermineSinkHole()
+        {
+            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    for(int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
+                    {
+                        for(int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
+                        {
+
+                        }
+                    }
+                }
+            }
+        }
+        public void DetermineLava()
+        {
+            int lavaNum = (int)((-1) * (FloorDepth - 10) * (Math.Pow((FloorDepth - 28), 3) / 1845.2));
+
+            System.Random random = new System.Random();
+            List<Vector2Int> coordList = new List<Vector2Int>();
+            for(int i = 0; i < lavaNum; i++)
+            {
+                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Lava, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
+            }
+
+            for(int i = 0; i < lavaNum; i++)
+            {
+                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Lava, coordList[i]);
+            }
+
+            random = null;
+        }
+        public void DetermineGlacier()
+        {
+            int glacierNum = (int)((-1) * FloorDepth * Math.Pow((FloorDepth - 20), 3) / 4219);
+
+            System.Random random = new System.Random();
+            List<Vector2Int> coordList = new List<Vector2Int>();
+            for (int i = 0; i < glacierNum; i++)
+            {
+                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Glacier, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
+            }
+
+            for (int i = 0; i < glacierNum; i++)
+            {
+                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Glacier, coordList[i]);
+            }
+
+            random = null;
+        }
+        public void DetermineEitr()
+        {
+            int eitrNum = (int)((-1) * (FloorDepth + 11) * (Math.Pow((FloorDepth - 33), 33) / 197653) + 1);
+
+            System.Random random = new System.Random();
+            List<Vector2Int> coordList = new List<Vector2Int>();
+            for (int i = 0; i < eitrNum; i++)
+            {
+                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Eitr, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
+            }
+
+            for (int i = 0; i < eitrNum; i++)
+            {
+                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Eitr, coordList[i]);
+            }
+
+            random = null;
+        }
+        internal Vector2Int SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements fundamentalElements, int realCoord_x, int realCoord_y)
+        {
+            Vector2Int vector2Int = new Vector2Int();
+            bool triger = true;
+
+            switch(fundamentalElements)
+            {
+                case AxisBaseTablePalette.EFundamentalElements.Lava:
+                    if(mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] >= LavaArea.x && mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] <= LavaArea.y)
+                    {
+                        vector2Int.x = realCoord_x;
+                        vector2Int.y = realCoord_y;
+                    }
+                    else
+                    {
+                        triger = true;   
+                    }
+                    break;
+
+                case AxisBaseTablePalette.EFundamentalElements.Glacier:
+                    if (mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] >= GlacierArea.x && mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] <= GlacierArea.y)
+                    {
+                        vector2Int.x = realCoord_x;
+                        vector2Int.y = realCoord_y;
+                    }
+                    else
+                    {
+                        triger = true;
+                    }
+                    break;
+
+                case AxisBaseTablePalette.EFundamentalElements.Eitr:
+                    if (mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] >= EitrArea.x && mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] <= EitrArea.y)
+                    {
+                        vector2Int.x = realCoord_x;
+                        vector2Int.y = realCoord_y;
+                    }
+                    else
+                    {
+                        triger = true;
+                    }
+                    break;
+            }
+
+            if(triger)
+            {
+                if (realCoord_x == 0)
+                {
+                    if (realCoord_y == 0)
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x + 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y + 1);
+                    }
+                    else if (realCoord_y == AbstractAxisLength.y * DetailAxisLength.y - 1)
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x + 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y - 1);
+                    }
+                    else
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y - 1);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x + 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y + 1);
+                    }
+                }
+                else if (realCoord_x == AbstractAxisLength.x * DetailAxisLength.x - 1)
+                {
+                    if (realCoord_y == 0)
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x - 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y + 1);
+                    }
+                    else if (realCoord_y == AbstractAxisLength.y * DetailAxisLength.y - 1)
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x - 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y - 1);
+                    }
+                    else
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y - 1);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x - 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y + 1);
+                    }
+                }
+                else
+                {
+                    if (realCoord_y == 0)
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x - 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y + 1);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x + 1, realCoord_y);
+                    }
+                    else if (realCoord_y == AbstractAxisLength.y * DetailAxisLength.y - 1)
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x - 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y - 1);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x + 1, realCoord_y);
+                    }
+                    else
+                    {
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y - 1);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x, realCoord_y + 1);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x - 1, realCoord_y);
+                        vector2Int = SearckFundamentalNodeCoord(fundamentalElements, realCoord_x + 1, realCoord_y);
+                    }
+                }
+            }
+
+            return vector2Int;
+        }
+        internal void SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements fundamentalElements, Vector2Int realCoord)
+        {
+            switch(fundamentalElements)
+            {
+                case AxisBaseTablePalette.EFundamentalElements.Lava:
+                    if(mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] >= LavaArea.x && mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] <= LavaArea.y)
+                    {
+                        if(mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] % (int)(AxisBaseTablePalette.EFundamentalElements.Lava) != 0)
+                        {
+                            mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] *= (int)(AxisBaseTablePalette.EFundamentalElements.Lava);
+
+                            SetFundamentalNodeInfluence(AxisBaseTablePalette.EFundamentalElements.Lava, realCoord);
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    break;
+
+                case AxisBaseTablePalette.EFundamentalElements.Glacier:
+                    if (mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] >= GlacierArea.x && mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] <= GlacierArea.y)
+                    {
+                        if (mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] % (int)(AxisBaseTablePalette.EFundamentalElements.Glacier) != 0)
+                        {
+                            mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] *= (int)(AxisBaseTablePalette.EFundamentalElements.Glacier);
+
+                            SetFundamentalNodeInfluence(AxisBaseTablePalette.EFundamentalElements.Glacier, realCoord);
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    break;
+
+                case AxisBaseTablePalette.EFundamentalElements.Eitr:
+                    if (mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] >= EitrArea.x && mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] <= EitrArea.y)
+                    {
+                        if (mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] % (int)(AxisBaseTablePalette.EFundamentalElements.Eitr) != 0)
+                        {
+                            mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] *= (int)(AxisBaseTablePalette.EFundamentalElements.Eitr);
+
+                            SetFundamentalNodeInfluence(AxisBaseTablePalette.EFundamentalElements.Eitr, realCoord);
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                    break;
+            }
+
+            if (realCoord.x == 0)
+            {
+                if (realCoord.y == 0)
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x + 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y + 1));
+                }
+                else if (realCoord.y == AbstractAxisLength.y * DetailAxisLength.y - 1)
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x + 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y - 1));
+                }
+                else
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y - 1));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x + 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y + 1));
+                }
+            }
+            else if (realCoord.x == AbstractAxisLength.x * DetailAxisLength.x - 1)
+            {
+                if (realCoord.y == 0)
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x - 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y + 1));
+                }
+                else if (realCoord.y == AbstractAxisLength.y * DetailAxisLength.y - 1)
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x - 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y - 1));
+                }
+                else
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y - 1));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x - 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y + 1));
+                }
+            }
+            else
+            {
+                if (realCoord.y == 0)
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x - 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y + 1));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x + 1, realCoord.y));
+                }
+                else if (realCoord.y == AbstractAxisLength.y * DetailAxisLength.y - 1)
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x - 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y - 1));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x + 1, realCoord.y));
+                }
+                else
+                {
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y + 1));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x, realCoord.y - 1));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x + 1, realCoord.y));
+                    SetFundamentalNode(fundamentalElements, new Vector2Int(realCoord.x - 1, realCoord.y));
+
+                }
+            }
+        }
+        internal void SetFundamentalNodeInfluence(AxisBaseTablePalette.EFundamentalElements fundamentalElements, Vector2Int realCoord)
+        {
+            int r = 0;
+            int targetFundamentalElement = 0;
+
+            switch(fundamentalElements)
+            {
+                case AxisBaseTablePalette.EFundamentalElements.Lava:
+                    r = FundamentalInfluenceRadius.x;
+                    targetFundamentalElement = (int)(AxisBaseTablePalette.EFundamentalElements.Lava);
+                    break;
+
+                case AxisBaseTablePalette.EFundamentalElements.Glacier:
+                    r = FundamentalInfluenceRadius.y;
+                    targetFundamentalElement = (int)(AxisBaseTablePalette.EFundamentalElements.Glacier);
+                    break;
+
+                case AxisBaseTablePalette.EFundamentalElements.Eitr:
+                    r = FundamentalInfluenceRadius.z;
+                    targetFundamentalElement = (int)(AxisBaseTablePalette.EFundamentalElements.Eitr);
+                    break;
+            }
+
+            for (int coord_y = realCoord.y - r; coord_y < realCoord.y + r + 1; coord_y++)
+            {
+                for (int coord_x = realCoord.x - r; coord_x < realCoord.x + r + 1; coord_x++)
+                {
+                    if ((coord_x >= 0 && coord_x < AbstractAxisLength.x * DetailAxisLength.x && coord_y >= 0 && coord_y < AbstractAxisLength.y * DetailAxisLength.y) && (coord_y >= (-1) * (coord_x - realCoord.x + r) + realCoord.y - r / 2 && coord_y >= coord_x - realCoord.x - r + realCoord.y - r / 2 && coord_y <= coord_x - realCoord.x + r + realCoord.y + r / 2 && coord_y <= (-1) * (coord_x - realCoord.x - r) + realCoord.y + r / 2))
+                    {
+                        mnodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x] *= targetFundamentalElement;
+                    }
                 }
             }
         }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine;
+using UnityEngine.Animations;
 
 namespace AxisBaseTableManager
 {
@@ -10,24 +12,22 @@ namespace AxisBaseTableManager
         private int[,,] mbiologyNodeTable;
         private int[,,] mpropNodeTable;
         private AxisBaseTablePalette maxisBaseTablePalette;
-        private int mxLength, myLength, mzLength;
+        private Vector3Int mfundamentalAxisLength;
 
 
 
         public AxisBaseTable(in AxisBaseTablePalette axisBaseTablePalette)
         {
             maxisBaseTablePalette = axisBaseTablePalette;
-            mxLength = maxisBaseTablePalette.OrderedCube.X;
-            myLength = maxisBaseTablePalette.OrderedCube.Y;
-            mzLength = maxisBaseTablePalette.OrderedCube.Z;
-            mgeologyNodeTable = new int[X, Y, Z];
-            mbiologyNodeTable = new int[X, Y, Z];
-            mpropNodeTable = new int[X, Y, Z];
-            for(int coord_x = 0; coord_x < mxLength; coord_x++)
+            mfundamentalAxisLength = axisBaseTablePalette.OrderedCube.OrderedAxisLength;
+            mgeologyNodeTable = new int[FundamentalAxisLength.x, FundamentalAxisLength.y, FundamentalAxisLength.z];
+            mbiologyNodeTable = new int[FundamentalAxisLength.x, FundamentalAxisLength.y, FundamentalAxisLength.z];
+            mpropNodeTable = new int[FundamentalAxisLength.x, FundamentalAxisLength.y, FundamentalAxisLength.z];
+            for(int coord_x = 0; coord_x < FundamentalAxisLength.x; coord_x++)
             {
-                for(int coord_y = 0; coord_y < myLength; coord_y++)
+                for(int coord_y = 0; coord_y < FundamentalAxisLength.y; coord_y++)
                 {
-                    for(int coord_z = 0; coord_z < mzLength; coord_z++)
+                    for(int coord_z = 0; coord_z < FundamentalAxisLength.z; coord_z++)
                     {
                         mgeologyNodeTable[coord_x, coord_y, coord_z] = -1;
                         mbiologyNodeTable[coord_x, coord_y, coord_z] = -1;
@@ -39,17 +39,15 @@ namespace AxisBaseTableManager
         public AxisBaseTable(in AxisBaseTablePalette axisBaseTablePalette, int x, int y, int z)
         {
             maxisBaseTablePalette = axisBaseTablePalette;
-            mxLength = x;
-            myLength = y;
-            mzLength = z;
-            mgeologyNodeTable = new int[X, Y, Z];
-            mbiologyNodeTable = new int[X, Y, Z];
-            mpropNodeTable = new int[X, Y, Z];
-            for (int coord_x = 0; coord_x < mxLength; coord_x++)
+            mfundamentalAxisLength = new Vector3Int(x, y, z);
+            mgeologyNodeTable = new int[FundamentalAxisLength.x, FundamentalAxisLength.y, FundamentalAxisLength.z];
+            mbiologyNodeTable = new int[FundamentalAxisLength.x, FundamentalAxisLength.y, FundamentalAxisLength.z];
+            mpropNodeTable = new int[FundamentalAxisLength.x, FundamentalAxisLength.y, FundamentalAxisLength.z];
+            for (int coord_x = 0; coord_x < FundamentalAxisLength.x; coord_x++)
             {
-                for (int coord_y = 0; coord_y < myLength; coord_y++)
+                for (int coord_y = 0; coord_y < FundamentalAxisLength.y; coord_y++)
                 {
-                    for (int coord_z = 0; coord_z < mzLength; coord_z++)
+                    for (int coord_z = 0; coord_z < FundamentalAxisLength.z; coord_z++)
                     {
                         mgeologyNodeTable[coord_x, coord_y, coord_z] = -1;
                         mbiologyNodeTable[coord_x, coord_y, coord_z] = -1;
@@ -64,9 +62,7 @@ namespace AxisBaseTableManager
             mbiologyNodeTable = axisBaseTableManager.BiologyNodeTable;
             mpropNodeTable = axisBaseTableManager.PropNodeTable;
             maxisBaseTablePalette = axisBaseTableManager.AxisBaseTablePalette;
-            mxLength = axisBaseTableManager.X;
-            myLength = axisBaseTableManager.Y;
-            mzLength = axisBaseTableManager.Z;
+            mfundamentalAxisLength = axisBaseTableManager.FundamentalAxisLength;
         }
 
         public int[,,] GeologyNodeTable
@@ -85,27 +81,19 @@ namespace AxisBaseTableManager
         {
             get => maxisBaseTablePalette;
         }
-        public int X
+        public Vector3Int FundamentalAxisLength
         {
-            get => mxLength;
-        }
-        public int Y
-        {
-            get => myLength;
-        }
-        public int Z
-        {
-            get => mzLength;
+            get => mfundamentalAxisLength;
         }
 
         public bool SetNode(int x, int y, int z, string nodename, AxisBaseTablePalette.EPaletteType paletteType)
         {
-            if(x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            if(x >= 0 && x < FundamentalAxisLength.x && y >= 0 && y < FundamentalAxisLength.y && z >= 0 && z < FundamentalAxisLength.z)
             {
                 switch(paletteType)
                 {
                     case AxisBaseTablePalette.EPaletteType.Geology:
-                        if (maxisBaseTablePalette.GeologyNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.X - 1) ? maxisBaseTablePalette.OrderedCube.X - 1 : x, (y > maxisBaseTablePalette.OrderedCube.Y - 1) ? maxisBaseTablePalette.OrderedCube.Y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.Z - 1) ? maxisBaseTablePalette.OrderedCube.Z - 1 : z].OrderedTypeClassify)
+                        if (maxisBaseTablePalette.GeologyNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.x - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.x - 1 : x, (y > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.y - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.z - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.z - 1 : z].OrderedTypeClassify)
                         {
                             mgeologyNodeTable[x, y, z] = nodename.GetHashCode();
                             return true;
@@ -113,7 +101,7 @@ namespace AxisBaseTableManager
                         return true;
 
                     case AxisBaseTablePalette.EPaletteType.Biology:
-                        if (maxisBaseTablePalette.BiologyNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.X - 1) ? maxisBaseTablePalette.OrderedCube.X - 1 : x, (y > maxisBaseTablePalette.OrderedCube.Y - 1) ? maxisBaseTablePalette.OrderedCube.Y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.Z - 1) ? maxisBaseTablePalette.OrderedCube.Z - 1 : z].OrderedTypeClassify)
+                        if (maxisBaseTablePalette.BiologyNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.x - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.x - 1 : x, (y > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.y - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.z - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.z - 1 : z].OrderedTypeClassify)
                         {
                             mbiologyNodeTable[x, y, z] = nodename.GetHashCode();
                             return true;
@@ -121,7 +109,7 @@ namespace AxisBaseTableManager
                         return true;
 
                     case AxisBaseTablePalette.EPaletteType.Prop:
-                        if (maxisBaseTablePalette.PropNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.X - 1) ? maxisBaseTablePalette.OrderedCube.X - 1 : x, (y > maxisBaseTablePalette.OrderedCube.Y - 1) ? maxisBaseTablePalette.OrderedCube.Y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.Z - 1) ? maxisBaseTablePalette.OrderedCube.Z - 1 : z].OrderedTypeClassify)
+                        if (maxisBaseTablePalette.PropNodeTable[nodename.GetHashCode()].OrderedTypeClassify == maxisBaseTablePalette.OrderedCube.OrderedCubeTable[(x > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.x - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.x - 1 : x, (y > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.y - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.y - 1 : y, (z > maxisBaseTablePalette.OrderedCube.OrderedAxisLength.z - 1) ? maxisBaseTablePalette.OrderedCube.OrderedAxisLength.z - 1 : z].OrderedTypeClassify)
                         {
                             mpropNodeTable[x, y, z] = nodename.GetHashCode();
                             return true;
@@ -134,7 +122,7 @@ namespace AxisBaseTableManager
         }
         public bool RemoveNode(int x, int y, int z, AxisBaseTablePalette.EPaletteType paletteType)
         {
-            if(x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            if(x >= 0 && x < FundamentalAxisLength.x && y >= 0 && y < FundamentalAxisLength.y && z >= 0 && z < FundamentalAxisLength.z)
             {
                 switch(paletteType)
                 {
@@ -160,11 +148,11 @@ namespace AxisBaseTableManager
             int[,,] tempBiologyNodeTable = new int[newX, newY, newZ];
             int[,,] tempPropNodeTable = new int[newX, newY, newZ];
 
-            for (int coord_x = 0; coord_x < ((mxLength < newX) ? mxLength : newX); coord_x++)
+            for (int coord_x = 0; coord_x < ((FundamentalAxisLength.x < newX) ? FundamentalAxisLength.x : newX); coord_x++)
             {
-                for (int coord_y = 0; coord_y < ((myLength < newY) ? myLength : newY); coord_y++)
+                for (int coord_y = 0; coord_y < ((FundamentalAxisLength.y < newY) ? FundamentalAxisLength.y : newY); coord_y++)
                 {
-                    for (int coord_z = 0; coord_z < ((mzLength < newZ) ? mzLength : newZ); coord_z++)
+                    for (int coord_z = 0; coord_z < ((FundamentalAxisLength.z < newZ) ? FundamentalAxisLength.z : newZ); coord_z++)
                     {
                         tempGeologyNodeTable[coord_x, coord_y, coord_z] = GeologyNodeTable[coord_x, coord_y, coord_z];
                         tempBiologyNodeTable[coord_x, coord_y, coord_z] = BiologyNodeTable[coord_x, coord_y, coord_z];
@@ -176,13 +164,11 @@ namespace AxisBaseTableManager
             mgeologyNodeTable = tempGeologyNodeTable;
             mbiologyNodeTable = tempBiologyNodeTable;
             mpropNodeTable = tempPropNodeTable;
-            mxLength = newX;
-            myLength = newY;
-            mzLength = newZ;
+            mfundamentalAxisLength = new Vector3Int(newX, newY, newZ);
         }
-        public byte[] GetJsonByteData()
+        public string GetJsonByteData()
         {
-            return System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this));
+            return JsonConvert.SerializeObject(this);
         }
     }
     public class AxisBaseTablePalette
@@ -192,6 +178,14 @@ namespace AxisBaseTableManager
             Geology = 1,
             Biology = 2,
             Prop = 3
+        };
+        public enum EFundamentalElements
+        {
+            Lava = 2,
+            Glacier = 3,
+            Eitr = 5,
+            SinkHole = 7,
+            Water = 11
         };
 
         public class GeologyNode
@@ -581,28 +575,23 @@ namespace AxisBaseTableManager
         };
         public struct InputPack
         {
-            private int mx, my, mz;
+            private Vector3Int morderedAxisLength;
             private OrderedNodeType morderedNodeType;
 
-            public InputPack(int x, int y, int z, in OrderedNodeType orderedNodeType)
+            public InputPack(int x, int y, int z, OrderedNodeType orderedNodeType)
             {
-                mx = x;
-                my = y;
-                mz = z;
+                morderedAxisLength = new Vector3Int(x, y, z);
+                morderedNodeType = orderedNodeType;
+            }
+            public InputPack(Vector3Int orderedAxisLength, OrderedNodeType orderedNodeType)
+            {
+                morderedAxisLength = orderedAxisLength;
                 morderedNodeType = orderedNodeType;
             }
 
-            public int X
+            public Vector3Int OrderedAxisLength
             {
-                get => mx;
-            }
-            public int Y
-            {
-                get => my;
-            }
-            public int Z
-            {
-                get => mz;
+                get => morderedAxisLength;
             }
             public OrderedNodeType OrderedNodeType
             {
@@ -614,25 +603,19 @@ namespace AxisBaseTableManager
 
         private OrderedNodeType morderedNodeType;
         private Node[,,] morderedCubeTable;
-        private int mxLength, myLength, mzLength;
+        private Vector3Int morderedAxisLength;
 
 
 
         public OrderedCube(in InputPack inputPack)
         {
-            mxLength = inputPack.X;
-            myLength = inputPack.Y;
-            mzLength = inputPack.Z;
-
+            morderedAxisLength = inputPack.OrderedAxisLength;
             morderedNodeType = inputPack.OrderedNodeType;
-            morderedCubeTable = new Node[mxLength, myLength, mzLength];
+            morderedCubeTable = new Node[OrderedAxisLength.x, OrderedAxisLength.y, OrderedAxisLength.z];
         }
         public OrderedCube(OrderedCube orderedCube)
         {
-            mxLength = orderedCube.X;
-            myLength = orderedCube.Y;
-            mzLength = orderedCube.Z;
-
+            morderedAxisLength = orderedCube.OrderedAxisLength;
             morderedNodeType = orderedCube.OrderedNodeType;
             morderedCubeTable = orderedCube.OrderedCubeTable;
         }
@@ -645,22 +628,14 @@ namespace AxisBaseTableManager
         {
             get => morderedNodeType;
         }
-        public int X
+        public Vector3Int OrderedAxisLength
         {
-            get => mxLength;
-        }
-        public int Y
-        {
-            get => myLength;
-        }
-        public int Z
-        {
-            get => mzLength;
+            get => morderedAxisLength;
         }
 
         public bool SetNode(int x, int y, int z, string orderedType, OrderedNodeType.EOrderedTypeClassify orderedTypeClassify)
         {
-            if (x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            if (x >= 0 && x < OrderedAxisLength.x && y >= 0 && y < OrderedAxisLength.y && z >= 0 && z < OrderedAxisLength.z)
             {
                 switch (orderedTypeClassify)
                 {
@@ -693,7 +668,7 @@ namespace AxisBaseTableManager
         }
         public bool RemoveNode(int x, int y, int z)
         {
-            if (x >= 0 && x < mxLength && y >= 0 && y < myLength && z >= 0 && z < mzLength)
+            if (x >= 0 && x < OrderedAxisLength.x && y >= 0 && y < OrderedAxisLength.y && z >= 0 && z < OrderedAxisLength.z)
             {
                 morderedCubeTable[x, y, z].SetNodeOrderedType(default(string));
                 morderedCubeTable[x, y, z].SetOrderedTypeClassify(default(OrderedNodeType.EOrderedTypeClassify));
@@ -705,11 +680,11 @@ namespace AxisBaseTableManager
         {
             Node[,,] tempNodeTable = new Node[newX, newY, newZ];
 
-            for (int coord_x = 0; coord_x < ((mxLength < newX) ? mxLength : newX); coord_x++)
+            for (int coord_x = 0; coord_x < ((OrderedAxisLength.x < newX) ? OrderedAxisLength.x : newX); coord_x++)
             {
-                for (int coord_y = 0; coord_y < ((myLength < newY) ? myLength : newY); coord_y++)
+                for (int coord_y = 0; coord_y < ((OrderedAxisLength.y < newY) ? OrderedAxisLength.y : newY); coord_y++)
                 {
-                    for (int coord_z = 0; coord_z < ((mzLength < newZ) ? mzLength : newZ); coord_z++)
+                    for (int coord_z = 0; coord_z < ((OrderedAxisLength.z < newZ) ? OrderedAxisLength.z : newZ); coord_z++)
                     {
                         tempNodeTable[coord_x, coord_y, coord_z].SetNodeOrderedType(morderedCubeTable[coord_x, coord_y, coord_z].NodeOrderedType);
                         tempNodeTable[coord_x, coord_y, coord_z].SetOrderedTypeClassify(morderedCubeTable[coord_x, coord_y, coord_z].OrderedTypeClassify);
@@ -718,9 +693,7 @@ namespace AxisBaseTableManager
             }
 
             morderedCubeTable = tempNodeTable;
-            mxLength = newX;
-            myLength = newY;
-            mzLength = newZ;
+            morderedAxisLength = new Vector3Int(newX, newY, newZ);
         }
     }
     public class OrderedNodeType

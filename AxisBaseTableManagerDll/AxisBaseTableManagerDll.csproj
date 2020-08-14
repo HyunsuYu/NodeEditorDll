@@ -8,6 +8,9 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\Newtonsoft_Json\Bin\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
