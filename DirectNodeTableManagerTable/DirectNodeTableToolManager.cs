@@ -110,14 +110,16 @@ namespace DirectNodeEditor
             private bool mbisGenerateLava;
             private bool mbisGenerateGlacier;
             private bool mbisGenerateEitr;
+            private bool mbisGenerateValley;
 
-            public InputPack_Auto(DirectNodeTableCoreInfo directNodeTableCoreInfo, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr)
+            public InputPack_Auto(DirectNodeTableCoreInfo directNodeTableCoreInfo, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr, bool bisGenerateValley)
             {
                 mdirectNodeTableCoreInfo = directNodeTableCoreInfo;
                 mbisGenerateSinkHole = bisGenerateSinkHole;
                 mbisGenerateLava = bisGenerateLava;
                 mbisGenerateGlacier = bisGenerateGlacier;
                 mbisGenerateEitr = bisGenerateEitr;
+                mbisGenerateValley = bisGenerateValley;
             }
 
             public DirectNodeTableCoreInfo DirectNodeTableCoreInfo
@@ -139,6 +141,10 @@ namespace DirectNodeEditor
             public bool IsGenerateEitr
             {
                 get => mbisGenerateEitr;
+            }
+            public bool IsGenerateValley
+            {
+                get => mbisGenerateValley;
             }
         }
         public struct InputPack_Manual
@@ -176,9 +182,10 @@ namespace DirectNodeEditor
                 sum += GetCutLine(floorIndex);
             }
 
+            VallyCalculate vallyCalculate = new VallyCalculate(new VallyCalculate.InputPack(new Vector2Int((int)UnityEngine.Random.Range(0.0f, texture.width), (int)UnityEngine.Random.Range(0.0f, texture.height)), VallyCalculate.DefaultMaxVectorNum, VallyCalculate.DefaultMaxAmplitude, VallyCalculate.DefaultMaxPeriod, VallyCalculate.DefaultFrequency));
             for (int floorIndex = 0; floorIndex < DefaultFloorDepth; floorIndex++)
             {
-                mfloorTable.Add(new DirectNodeEditor.FloorTable(new DirectNodeEditor.FloorTable.InputPack_Auto(GetCutLine(floorIndex) / sum, texture, inputPack.IsGenerateSinkHole, inputPack.IsGenerateLava, inputPack.IsGenerateGlacier, inputPack.IsGenerateEitr, floorIndex, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength)));
+                mfloorTable.Add(new DirectNodeEditor.FloorTable(new DirectNodeEditor.FloorTable.InputPack_Auto(GetCutLine(floorIndex) / sum, texture, inputPack.IsGenerateSinkHole, inputPack.IsGenerateLava, inputPack.IsGenerateGlacier, inputPack.IsGenerateEitr, inputPack.IsGenerateValley, floorIndex, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength, vallyCalculate.GetNextFloorValleyCalculate(VallyCalculate.DefaultChangeAmplitudeAmount, VallyCalculate.DefaultChangePeriodAmount))));
             }
         }
         public DirectNodeTable(InputPack_Manual inputPack)
@@ -586,10 +593,12 @@ namespace DirectNodeEditor
             private bool mbisGenerateLava;
             private bool mbisGenerateGlacier;
             private bool mbisGenerateEitr;
+            private bool mbisGenerateValley;
             private int mfloorDepth;
             private Vector3Int mfundamentalInfluenceRadius;
+            private VallyCalculate mvallyCalculate;
 
-            public InputPack_Auto(float noiseMapCutLine, Texture2D noiseTexture, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr, int floorDepth, Vector3Int fundamentalInfluenceRadius)
+            public InputPack_Auto(float noiseMapCutLine, Texture2D noiseTexture, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr, bool bisGenerateValley, int floorDepth, Vector3Int fundamentalInfluenceRadius, VallyCalculate vallyCalculate)
             {
                 mnoiseMapCutLine = noiseMapCutLine;
                 mnoiseTexture = noiseTexture;
@@ -597,8 +606,10 @@ namespace DirectNodeEditor
                 mbisGenerateLava = bisGenerateLava;
                 mbisGenerateGlacier = bisGenerateGlacier;
                 mbisGenerateEitr = bisGenerateEitr;
+                mbisGenerateValley = bisGenerateValley;
                 mfloorDepth = floorDepth;
                 mfundamentalInfluenceRadius = fundamentalInfluenceRadius;
+                mvallyCalculate = vallyCalculate;
             }
 
             public float NoiseMapCutLine
@@ -625,6 +636,10 @@ namespace DirectNodeEditor
             {
                 get => mbisGenerateEitr;
             }
+            public bool IsGenerateValley
+            {
+                get => mbisGenerateValley;
+            }
             public int FloorDepth
             {
                 get => mfloorDepth;
@@ -632,6 +647,10 @@ namespace DirectNodeEditor
             public Vector3Int FundamentalInfluenceRadius
             {
                 get => mfundamentalInfluenceRadius;
+            }
+            public VallyCalculate VallyCalculate
+            {
+                get => mvallyCalculate;
             }
         }
         public struct InputPack_Manual
@@ -715,7 +734,16 @@ namespace DirectNodeEditor
             {
                 DetermineSinkHole();
             }
+            if (inputPack.IsGenerateValley)
+            {
+                DetermineValley(inputPack.VallyCalculate);
+            }
 
+            GenerateCaveStructure();
+
+            DetermineGeologyNodes();
+            DetermineBiologyNodes();
+            DeterminePropNodes();
         }
         public FloorTable(InputPack_Manual inputPack)
         {
@@ -912,44 +940,66 @@ namespace DirectNodeEditor
                 }
             }
 
+            Vector2Int startOoord = new Vector2Int(), endCoord = new Vector2Int();
+
             switch(anchor)
             {
                 case EAnchor.TopLeft:
-
+                    startOoord = new Vector2Int(0, 0);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : newAbstractLength.y - 1);
                     break;
 
                 case EAnchor.TopStraight:
-
+                    startOoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? 0 : (AbstractAxisLength.x - newAbstractLength.x) / 2 - 1, 0);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : (AbstractAxisLength.x - newAbstractLength.x) / 2 + newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : newAbstractLength.y - 1);
                     break;
 
                 case EAnchor.TopRight:
-
+                    startOoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? 0 : AbstractAxisLength.x - newAbstractLength.x - 1, 0);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : newAbstractLength.y - 1);
                     break;
 
                 case EAnchor.MiddleLeft:
-
+                    startOoord = new Vector2Int(0, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : (AbstractAxisLength.y - newAbstractLength.y) / 2 - 1);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : (AbstractAxisLength.y - newAbstractLength.y) / 2 + newAbstractLength.y - 1);
                     break;
 
                 case EAnchor.Center:
-
+                    startOoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? 0 : (AbstractAxisLength.x - newAbstractLength.x) / 2 - 1, AbstractAxisLength.y <= newAbstractLength.y ? 0 : (AbstractAxisLength.y - newAbstractLength.y) / 2 - 1);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : (AbstractAxisLength.x - newAbstractLength.x) / 2 + newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : (AbstractAxisLength.y - newAbstractLength.y) / 2 + newAbstractLength.y - 1);
                     break;
 
                 case EAnchor.MiddleRight:
-
+                    startOoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? 0 : (AbstractAxisLength.x - newAbstractLength.x) - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : (AbstractAxisLength.y - newAbstractLength.y) / 2 - 1);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : (AbstractAxisLength.y - newAbstractLength.y) / 2 + newAbstractLength.y - 1);
                     break;
 
                 case EAnchor.BottomLeft:
-
+                    startOoord = new Vector2Int(0, AbstractAxisLength.y <= newAbstractLength.y ? 0 : AbstractAxisLength.y - newAbstractLength.y - 1);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : newAbstractLength.y - 1);
                     break;
 
                 case EAnchor.BottomStraight:
-
+                    startOoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? 0 : (AbstractAxisLength.x - newAbstractLength.x) / 2 - 1, AbstractAxisLength.y <= newAbstractLength.y ? 0 : AbstractAxisLength.y - newAbstractLength.y - 1);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : (AbstractAxisLength.x - newAbstractLength.x) / 2 + newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : newAbstractLength.y - 1);
                     break;
 
                 case EAnchor.BottomRight:
-
+                    startOoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? 0 : (AbstractAxisLength.x - newAbstractLength.x) - 1, AbstractAxisLength.y <= newAbstractLength.y ? 0 : AbstractAxisLength.y - newAbstractLength.y - 1);
+                    endCoord = new Vector2Int(AbstractAxisLength.x <= newAbstractLength.x ? AbstractAxisLength.x - 1 : newAbstractLength.x - 1, AbstractAxisLength.y <= newAbstractLength.y ? AbstractAxisLength.y - 1 : newAbstractLength.y - 1);
                     break;
             }
+
+            for(int coord_y = startOoord.y; coord_y < endCoord.y; coord_y++)
+            {
+                for(int coord_x =startOoord.x; coord_x < endCoord.x; coord_x++)
+                {
+                    tempNodeTable[coord_y, coord_x] = NodeTable[coord_y, coord_x];
+                }
+            }
+
+            mnodeTable = tempNodeTable;
+            mabstractAxisLength = newAbstractLength;
         }
         internal Texture2D BakeToTexture2D(DirectNodeTableCoreInfo directNodeTableCoreInfo)
         {
@@ -1176,20 +1226,42 @@ namespace DirectNodeEditor
             random = null;
             return texture;
         }
-        public void DetermineSinkHole()
+        internal void DetermineSinkHole()
         {
-            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
-            {
-                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
-                {
-                    for(int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
-                    {
-                        for(int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
-                        {
+            System.Random random = new System.Random();
 
+            int totalSinkHoleNumber = (-1) * (FloorDepth + 3) * (FloorDepth - 30) / 90 + random.Next(-1, 2);
+
+            if(totalSinkHoleNumber > 0)
+            {
+                Vector2Int vector = new Vector2Int();
+
+                for(int i = 0; i < totalSinkHoleNumber; i++)
+                {
+                    while(true)
+                    {
+                        vector.x = random.Next(0, AbstractAxisLength.x);
+                        vector.y = random.Next(0, AbstractAxisLength.y);
+
+                        if(mnodeTable[vector.y / DetailAxisLength.y, vector.x / DetailAxisLength.x].FundamentalElementsTable[vector.y % DetailAxisLength.y, vector.x % DetailAxisLength.x] == 1)
+                        {
+                            break;
                         }
                     }
+
+                    SetHoleNodes(vector, 5.0f, 25.0f);
                 }
+            }
+
+            random = null;
+        }
+        internal void DetermineValley(VallyCalculate vallyCalculate)
+        {
+            List<Vector2Int> vectors = vallyCalculate.CalsulateValley(VallyCalculate.DefaultExtraTime);
+
+            for(int i = 0; i < vectors.Count; i++)
+            {
+                SetHoleNodes(vectors[i], 10.0f, 20.0f);
             }
         }
         public void DetermineLava()
@@ -1504,6 +1576,41 @@ namespace DirectNodeEditor
                     }
                 }
             }
+        }
+        internal void SetHoleNodes(Vector2Int realCoord, float minScale, float maxScale)
+        {
+            int r = (int)UnityEngine.Random.Range(minScale, maxScale);
+
+            for (int coord_y = realCoord.y - r; coord_y < realCoord.y + r + 1; coord_y++)
+            {
+                for (int coord_x = realCoord.x - r; coord_x < realCoord.x + r + 1; coord_x++)
+                {
+                    if ((coord_x >= 0 && coord_x < AbstractAxisLength.x * DetailAxisLength.x && coord_y >= 0 && coord_y < AbstractAxisLength.y * DetailAxisLength.y) && (coord_y >= (-1) * (coord_x - realCoord.x + r) + realCoord.y - r / 2 && coord_y >= coord_x - realCoord.x - r + realCoord.y - r / 2 && coord_y <= coord_x - realCoord.x + r + realCoord.y + r / 2 && coord_y <= (-1) * (coord_x - realCoord.x - r) + realCoord.y + r / 2))
+                    {
+                        mnodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x] *= (int)AxisBaseTablePalette.EFundamentalElements.SinkHole;
+                    }
+                }
+            }
+        }
+        internal void GenerateCaveStructure()
+        {
+
+        }
+        internal void DetermineGeologyNodes()
+        {
+
+        }
+        internal void DetermineBiologyNodes()
+        {
+
+        }
+        internal void DeterminePropNodes()
+        {
+
+        }
+        internal void CalculateLiquidEffect()
+        {
+
         }
     }
     #endregion

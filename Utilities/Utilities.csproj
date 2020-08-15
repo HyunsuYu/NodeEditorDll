@@ -8,6 +8,9 @@
     <Reference Include="AxisBaseTableManagerDll">
       <HintPath>..\AxisBaseTableManagerDll\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using AxisBaseTableManager;
+using UnityEngine;
 
 namespace Utilities
 {
@@ -205,6 +206,234 @@ namespace Utilities
             }
 
             return primeStorage[primeStorage.Count - 1];
+        }
+    }
+    public class VallyCalculate
+    {
+        public struct FrequencyFunction
+        {
+            public double mamplitude;
+            public double mperiod;
+        }
+        private struct NodeVector
+        {
+            public double mcurTime;
+            public Vector2 mcenter;
+            public Vector2 mvector;
+            public Vector2 mdot;
+        }
+
+        public struct InputPack
+        {
+            private Vector2Int mcoord;
+            private int mmaxVectorNum;
+            private int mmaxAmplitude;
+            private int mmaxPeriod;
+            private double mfrequency;
+
+            public InputPack(Vector2Int coord, int maxVectorNum, int maxAmplitude, int maxPeriod, double frequency)
+            {
+                mcoord = coord;
+                mmaxVectorNum = maxVectorNum;
+                mmaxAmplitude = maxAmplitude;
+                mmaxPeriod = maxPeriod;
+                mfrequency = frequency;
+            }
+
+            public Vector2Int Coord
+            {
+                get => mcoord;
+            }
+            public int MaxVectorNum
+            {
+                get => mmaxVectorNum;
+            }
+            public int MaxAmplitude
+            {
+                get => mmaxAmplitude;
+            }
+            public int MaxPeriod
+            {
+                get => mmaxPeriod;
+            }
+            public double Frequency
+            {
+                get => mfrequency;
+            }
+        };
+
+
+
+        private FrequencyFunction[] mnodeInfos;
+        private NodeVector[] mnodeVectors;
+        private List<Vector2Int> mresultCoords;
+
+        private int mmaxVectorNum;
+        private int mmaxAmplitude;
+        private int mmaxPeriod;
+        private double mfrequency;
+        private int mfirstN;
+
+        private Vector2Int mcoord;
+
+        //  method
+        public VallyCalculate(in InputPack inputPack)
+        {
+            mmaxVectorNum = inputPack.MaxVectorNum;
+            mmaxAmplitude = inputPack.MaxAmplitude;
+            mmaxPeriod = inputPack.MaxPeriod;
+            mfrequency = inputPack.Frequency;
+            mfirstN = mmaxVectorNum * 3 / 4 * (-1);
+
+            mcoord = inputPack.Coord;
+
+            mnodeInfos = new FrequencyFunction[mmaxVectorNum];
+            mnodeVectors = new NodeVector[mmaxVectorNum];
+            mresultCoords = new List<Vector2Int>();
+
+            SetNodeInfos();
+        }
+
+        internal VallyCalculate(VallyCalculate vallyCalculate, double changeAmplitudeAmount, double changePeriodAmount)
+        {
+            mmaxVectorNum = vallyCalculate.mmaxVectorNum;
+            mmaxAmplitude = vallyCalculate.mmaxAmplitude;
+            mmaxPeriod = vallyCalculate.mmaxPeriod;
+            mfrequency = vallyCalculate.mfrequency;
+            mfirstN = vallyCalculate.mfirstN;
+
+            mcoord = vallyCalculate.mcoord;
+
+            mnodeInfos = new FrequencyFunction[mmaxVectorNum];
+            mnodeVectors = new NodeVector[mmaxVectorNum];
+            mresultCoords = new List<Vector2Int>();
+
+            SetNextNodeInfos(vallyCalculate.mnodeInfos, changeAmplitudeAmount, changePeriodAmount);
+        }
+
+        public static int DefaultMaxVectorNum
+        {
+            get => 15;
+        }
+        public static int DefaultMaxAmplitude
+        {
+            get => 10;
+        }
+        public static int DefaultMaxPeriod
+        {
+            get => 7;
+        }
+        public static double DefaultFrequency
+        {
+            get => 0.01;
+        }
+        public static double DefaultChangeAmplitudeAmount
+        {
+            get => 1.0;
+        }
+        public static double DefaultChangePeriodAmount
+        {
+            get => 1.0;
+        }
+        public static double DefaultExtraTime
+        {
+            get => Math.PI;
+        }
+
+        public List<Vector2Int> CalsulateValley(double extraTime)
+        {
+            while(MakeFourier(extraTime))
+            {
+                ;
+            }
+
+            return mresultCoords;
+        }
+        public VallyCalculate GetNextFloorValleyCalculate(double changeAmplitudeAmount, double changePeriodAmount)
+        {
+            return new VallyCalculate(this, changeAmplitudeAmount, changePeriodAmount);
+        }
+
+        private bool MakeFourier(double extraTime)
+        {
+            mnodeVectors[0].mcenter.x = mcoord.x;
+            mnodeVectors[0].mcenter.y = mcoord.y;
+
+            for (int index = 0; index < mmaxVectorNum; index++)
+            {
+                mnodeVectors[index].mvector.x = (float)(GetFx(index) * GetCircle_x(index));
+                if (mfirstN + index < 0)
+                {
+                    mnodeVectors[index].mvector.y = (float)(GetFx(index) * GetCircle_y(index, true));
+                }
+                else
+                {
+                    mnodeVectors[index].mvector.y = (float)(GetFx(index) * GetCircle_y(index, false));
+                }
+                mnodeVectors[index].mdot.x = mnodeVectors[index].mcenter.x + mnodeVectors[index].mvector.x;
+                mnodeVectors[index].mdot.y = mnodeVectors[index].mcenter.y + mnodeVectors[index].mvector.y;
+                mnodeVectors[index].mcurTime += mfrequency * Math.Abs(mfirstN + index);
+
+                if (mfirstN + index == 0 && mnodeVectors[index].mcurTime >= Math.PI)
+                {
+                    mresultCoords.Add(new Vector2Int((int)mnodeVectors[mmaxVectorNum - 1].mdot.x, (int)mnodeVectors[mmaxVectorNum - 1].mdot.y));
+                }
+                if(mfirstN + index == 0 && mnodeVectors[index].mcurTime >= Math.PI + extraTime)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        private void SetNodeInfos()
+        {
+            System.Random random = new System.Random();
+
+            for (int i = 0; i < mmaxVectorNum; i++)
+            {
+                mnodeInfos[i].mamplitude = random.NextDouble() * mmaxAmplitude;
+                mnodeInfos[i].mperiod = random.NextDouble() * mmaxPeriod;
+            }
+
+            random = null;
+        }
+        private void SetNextNodeInfos(FrequencyFunction[] frequencyFunctions, double changeAmplitudeAmount, double changePeriodAmount)
+        {
+            for(int i = 0; i < mmaxVectorNum; i++)
+            {
+                mnodeInfos[i].mamplitude = frequencyFunctions[i].mamplitude + changeAmplitudeAmount;
+                mnodeInfos[i].mperiod = frequencyFunctions[i].mperiod + changePeriodAmount;
+            }
+        }
+        private double GetFx(int index)
+        {
+            return mnodeInfos[index].mamplitude * Math.Cos(mnodeVectors[index].mcurTime * mnodeInfos[index].mperiod);
+        }
+        private double GetCircle_x(int index)
+        {
+            return Math.Cos(mnodeVectors[index].mcurTime);
+        }
+        private double GetCircle_y(int index, bool isClockWay)
+        {
+            if (isClockWay == true)
+            {
+                return Math.Sin(mnodeVectors[index].mcurTime);
+            }
+            else
+            {
+                return (-1) * Math.Sin(mnodeVectors[index].mcurTime);
+            }
+        }
+        private void MoveNestVectors(int index)
+        {
+            for (int i = index + 1; i < mmaxVectorNum; i++)
+            {
+                mnodeVectors[i].mcenter.x = mnodeVectors[i - 1].mdot.x;
+                mnodeVectors[i].mcenter.y = mnodeVectors[i - 1].mdot.y;
+                mnodeVectors[i].mdot.x = mnodeVectors[i].mcenter.x + mnodeVectors[i].mvector.x;
+                mnodeVectors[i].mdot.y = mnodeVectors[i].mcenter.y + mnodeVectors[i].mvector.y;
+            }
         }
     }
 }

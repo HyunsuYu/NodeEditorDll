@@ -185,7 +185,7 @@ namespace AxisBaseTableManager
             Glacier = 3,
             Eitr = 5,
             SinkHole = 7,
-            Water = 11
+            Cave = 11
         };
 
         public class GeologyNode
@@ -198,12 +198,21 @@ namespace AxisBaseTableManager
                 LeftSide = 4,
                 RightSide = 5
             };
+            public enum ENodeStateType
+            {
+                Solid = 1,
+                Liquid = 2,
+                Gas = 3
+            };
 
             private string mnodeName;
             private Dictionary<ENodeSideType, byte[]> mnodePNGs;
 
             private OrderedNodeType.EOrderedTypeClassify morderedTypeClassify;
             private string mnodeOrderedTypeKind;
+
+            private ENodeStateType mnodeStateType;
+            private float mnodeMovementSpeed;
 
             public GeologyNode(string nodeName)
             {
@@ -212,6 +221,9 @@ namespace AxisBaseTableManager
 
                 morderedTypeClassify = new OrderedNodeType.EOrderedTypeClassify();
                 mnodeOrderedTypeKind = default(string);
+
+                mnodeStateType = ENodeStateType.Solid;
+                mnodeMovementSpeed = 0.0f;
             }
 
             public string NodeName
@@ -229,6 +241,16 @@ namespace AxisBaseTableManager
             public string NodeOrderedTypeKind
             {
                 get => mnodeOrderedTypeKind;
+            }
+            public ENodeStateType NodeStateType
+            {
+                get => mnodeStateType;
+                set => mnodeStateType = value;
+            }
+            public float NodeMovementSpeed
+            {
+                get => mnodeMovementSpeed;
+                set => mnodeMovementSpeed = value;
             }
 
             public void SetNodeSidePNG(byte[] sidePNGBytes, ENodeSideType nodeSideType)
