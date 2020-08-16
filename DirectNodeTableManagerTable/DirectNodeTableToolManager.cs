@@ -597,8 +597,9 @@ namespace DirectNodeEditor
             private int mfloorDepth;
             private Vector3Int mfundamentalInfluenceRadius;
             private VallyCalculate mvallyCalculate;
+            private CaveStructureChancePack mcaveStructureChancePack;
 
-            public InputPack_Auto(float noiseMapCutLine, Texture2D noiseTexture, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr, bool bisGenerateValley, int floorDepth, Vector3Int fundamentalInfluenceRadius, VallyCalculate vallyCalculate)
+            public InputPack_Auto(float noiseMapCutLine, Texture2D noiseTexture, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr, bool bisGenerateValley, int floorDepth, Vector3Int fundamentalInfluenceRadius, VallyCalculate vallyCalculate, CaveStructureChancePack caveStructureChancePack)
             {
                 mnoiseMapCutLine = noiseMapCutLine;
                 mnoiseTexture = noiseTexture;
@@ -610,6 +611,7 @@ namespace DirectNodeEditor
                 mfloorDepth = floorDepth;
                 mfundamentalInfluenceRadius = fundamentalInfluenceRadius;
                 mvallyCalculate = vallyCalculate;
+                mcaveStructureChancePack = caveStructureChancePack;
             }
 
             public float NoiseMapCutLine
@@ -652,6 +654,10 @@ namespace DirectNodeEditor
             {
                 get => mvallyCalculate;
             }
+            public CaveStructureChancePack CaveStructureChancePack
+            {
+                get => mcaveStructureChancePack;
+            }
         }
         public struct InputPack_Manual
         {
@@ -683,6 +689,51 @@ namespace DirectNodeEditor
             public Vector3Int FundamentalInfluenceRadius
             {
                 get => mfundamentalInfluenceRadius;
+            }
+        }
+        public struct CaveStructureChancePack
+        {
+            private float mnodeOccurChance, mbridgeOccurChance, mnodeOccurWeight, mnodeWebBaseDetermineChance, mnodeWebConnectionChance;
+            private float mabstractDiagonalChancePerNode, mdetailDiagonalChancePerNode;
+
+            public CaveStructureChancePack(float nodeOccurChance, float bridgeOccurChance, float nodeOccurWeight, float nodeWebBaseDetermineChance, float nodeWebConnectionChance, float abstractDiagonalChancePerNode, float detailDiagonalChancePerNode)
+            {
+                mnodeOccurChance = nodeOccurChance;
+                mbridgeOccurChance = bridgeOccurChance;
+                mnodeOccurWeight = nodeOccurWeight;
+                mnodeWebBaseDetermineChance = nodeWebBaseDetermineChance;
+                mnodeWebConnectionChance = nodeWebConnectionChance;
+                mabstractDiagonalChancePerNode = abstractDiagonalChancePerNode;
+                mdetailDiagonalChancePerNode = detailDiagonalChancePerNode;
+            }
+
+            public float NodeOccurChance
+            {
+                get => mnodeOccurChance;
+            }
+            public float BridgeOccurChance
+            {
+                get => mbridgeOccurChance;
+            }
+            public float NodeOccurWeight
+            {
+                get => mnodeOccurWeight;
+            }
+            public float NodeWebBaseDetermineChance
+            {
+                get => mnodeWebBaseDetermineChance;
+            }
+            public float NodeWebConnectionChance
+            {
+                get => mnodeWebConnectionChance;
+            }
+            public float AbstractDiagonalChancePerNode
+            {
+                get => mabstractDiagonalChancePerNode;
+            }
+            public float DetailDiagonalChancePerNode
+            {
+                get => mdetailDiagonalChancePerNode;
             }
         }
 
@@ -739,7 +790,7 @@ namespace DirectNodeEditor
                 DetermineValley(inputPack.VallyCalculate);
             }
 
-            GenerateCaveStructure();
+            GenerateCaveStructure(inputPack.CaveStructureChancePack);
 
             DetermineGeologyNodes();
             DetermineBiologyNodes();
@@ -1205,7 +1256,7 @@ namespace DirectNodeEditor
 
                     for (int index = 0; index < overlapScales.Count; index++)
                     {
-                        noiseValue += 1 / overlapScales[index] * Mathf.PerlinNoise(coord_x / DirectNodeEditor.FloorTable.DefaultAxisAbstractLength * overlapScales[index], coord_y / DirectNodeEditor.FloorTable.DefaultAxisAbstractLength * overlapScales[index]);
+                        noiseValue += 1 / overlapScales[index] * Mathf.PerlinNoise(coord_x / AbstractAxisLength.x * DetailAxisLength.x * overlapScales[index], coord_y / AbstractAxisLength.y * DetailAxisLength.y * overlapScales[index]);
                     }
                     noiseValue = (float)Math.Pow(noiseValue, powNum);
 
@@ -1592,9 +1643,30 @@ namespace DirectNodeEditor
                 }
             }
         }
-        internal void GenerateCaveStructure()
+        internal void GenerateCaveStructure(CaveStructureChancePack caveStructureChancePack)
         {
+            CaveStructure caveStructure = new CaveStructure(new CaveStructure.InputPack(GetCurrentHeightMap(), AbstractAxisLength, DetailAxisLength, caveStructureChancePack.NodeOccurChance, caveStructureChancePack.BridgeOccurChance, caveStructureChancePack.NodeOccurWeight, caveStructureChancePack.NodeWebBaseDetermineChance, caveStructureChancePack.NodeWebConnectionChance, caveStructureChancePack.AbstractDiagonalChancePerNode, caveStructureChancePack.DetailDiagonalChancePerNode));
+        }
+        internal Texture2D GetCurrentHeightMap()
+        {
+            Texture2D texture = new Texture2D(AbstractAxisLength.x * DetailAxisLength.x, AbstractAxisLength.y * DetailAxisLength.y);
 
+            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    for(int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
+                    {
+                        for(int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
+                        {
+                            texture.SetPixel(coord_x + detailCoord_x, coord_y + detailCoord_y, new Color(NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x], NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x], NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x]));
+                        }
+                    }
+                }
+            }
+            texture.Apply();
+
+            return texture;
         }
         internal void DetermineGeologyNodes()
         {
