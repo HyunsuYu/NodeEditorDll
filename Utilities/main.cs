@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using AxisBaseTableManager;
 using UnityEngine;
+using DirectNodeEditor;
 
 namespace Utilities
 {
@@ -441,10 +441,21 @@ namespace Utilities
     {
         public class Node
         {
+            public enum ELinkedState
+            {
+                North = 1,
+                South = 2,
+                East = 3,
+                West = 4
+            };
+
+
+
             private bool mbexist;
             private bool mbwebBase;
             private BridgeConnection mbridgeConnection;
             private List<Vector2Int> mabstractWebConnection;
+            private List<ELinkedState> mlinkedState;
 
 
             public Node()
@@ -453,6 +464,7 @@ namespace Utilities
                 mbwebBase = false;
                 mbridgeConnection = new BridgeConnection();
                 mabstractWebConnection = new List<Vector2Int>();
+                mlinkedState = new List<ELinkedState>();
             }
 
 
@@ -474,6 +486,10 @@ namespace Utilities
             public List<Vector2Int> AbstractWebConnection
             {
                 get => mabstractWebConnection;
+            }
+            public List<ELinkedState> LinkedState
+            {
+                get => mlinkedState;
             }
         }
         public class BridgeConnection
@@ -554,26 +570,28 @@ namespace Utilities
                 random = null;
             }
         }
+        public enum EChanceKinds
+        {
+            NodeOccurChance = 1,
+            NodeOccurWeight = 2,
+            NodeWebBaseDetermineChance = 3,
+            BridgeWebDetermineChance = 5,
+            AbstractDiagonalChancePerNode = 6,
+            DetailDiagonalChancePerNode = 7
+        };
 
         public struct InputPack
         {
             private Vector2Int mabstractAxisLength, mdetailAxisLength;
-            private float mnodeOccurChance, mbridgeOccurChance, mnodeOccurWeight, mnodeWebBaseDetermineChance, mnodeWebConnectionChance;
-            private float mabstractDiagonalChancePerNode, mdetailDiagonalChancePerNode;
+            private Dictionary<EChanceKinds, float> mchances;
             private Texture2D mtexture;
 
-            public InputPack(Texture2D texture, Vector2Int abstractAxisLength, Vector2Int detailAxisLength, float nodeOccurChance, float bridgeOccurChance, float nodeOccurWeight, float nodeWebBaseDetermineChance, float nodeWebConnectionChance, float abstractDiagonalChancePerNode, float detailDiagonalChancePerNode)
+            public InputPack(Texture2D texture, Vector2Int abstractAxisLength, Vector2Int detailAxisLength, Dictionary<EChanceKinds, float> chances)
             {
                 mtexture = texture;
                 mabstractAxisLength = abstractAxisLength;
                 mdetailAxisLength = detailAxisLength;
-                mnodeOccurChance = nodeOccurChance;
-                mbridgeOccurChance = bridgeOccurChance;
-                mnodeOccurWeight = nodeOccurWeight;
-                mnodeWebBaseDetermineChance = nodeWebBaseDetermineChance;
-                mnodeWebConnectionChance = nodeWebConnectionChance;
-                mabstractDiagonalChancePerNode = abstractDiagonalChancePerNode;
-                mdetailDiagonalChancePerNode = detailDiagonalChancePerNode;
+                mchances = chances;
             }
 
             public Texture2D Texture
@@ -588,39 +606,16 @@ namespace Utilities
             {
                 get => mdetailAxisLength;
             }
-            public float NodeOccurChance
+            public Dictionary<EChanceKinds, float> Chances
             {
-                get => mnodeOccurChance;
-            }
-            public float BridgeOccurChance
-            {
-                get => mbridgeOccurChance;
-            }
-            public float NodeOccurWeight
-            {
-                get => mnodeOccurWeight;
-            }
-            public float NodeWebBaseDetermineChance
-            {
-                get => mnodeWebBaseDetermineChance;
-            }
-            public float NodeWebConnectionChance
-            {
-                get => mnodeWebConnectionChance;
-            }
-            public float AbstractDiagonalChancePerNode
-            {
-                get => mabstractDiagonalChancePerNode;
-            }
-            public float DetailDiagonalChancePerNode
-            {
-                get => mdetailDiagonalChancePerNode;
+                get => mchances;
             }
         }
 
 
 
         private Node[,] mnodeTable;
+        private List<List<float>> mverticalBoundaryFrequency, mhorizontalBoundaryFrequency;
         private Vector2Int mabstractAxisLength, mdetailAxisLength;
 
 
@@ -631,13 +626,47 @@ namespace Utilities
             mdetailAxisLength = inputPack.DetailAxisLength;
 
             mnodeTable = new Node[AbstractAxisLength.y, AbstractAxisLength.x];
+            mverticalBoundaryFrequency = new List<List<float>>();
+            mhorizontalBoundaryFrequency = new List<List<float>>();
 
             GenerateCaveStructure(inputPack);
+            DetectNodeLinkedState();
+
+            System.Random random = new System.Random();
+            float shortcutNum = (float)(Math.PI / 2.0);
+            for(int index = 0; index < AbstractAxisLength.y + 1; index++)
+            {
+                mhorizontalBoundaryFrequency.Add(new List<float>());
+
+                mhorizontalBoundaryFrequency[index].Add(shortcutNum * 2);
+                mhorizontalBoundaryFrequency[index].Add(shortcutNum * 4);
+                mhorizontalBoundaryFrequency[index].Add(shortcutNum / random.Next(3, 11));
+                mhorizontalBoundaryFrequency[index].Add(shortcutNum / random.Next(20, 41));
+            }
+            for(int index = 0; index < AbstractAxisLength.x + 1; index++)
+            {
+                mverticalBoundaryFrequency.Add(new List<float>());
+
+                mverticalBoundaryFrequency[index].Add(shortcutNum * 2);
+                mverticalBoundaryFrequency[index].Add(shortcutNum * 4);
+                mverticalBoundaryFrequency[index].Add(shortcutNum / random.Next(3, 11));
+                mverticalBoundaryFrequency[index].Add(shortcutNum / random.Next(20, 41));
+            }
+
+            random = null;
         }
 
         public Node[,] NodeTable
         {
             get => mnodeTable;
+        }
+        public List<List<float>> VerticalBoundaryFrequency
+        {
+            get => mverticalBoundaryFrequency;
+        }
+        public List<List<float>> HorizontalBoundaryFrequency
+        {
+            get => mhorizontalBoundaryFrequency;
         }
         public Vector2Int AbstractAxisLength
         {
@@ -648,7 +677,7 @@ namespace Utilities
             get => mdetailAxisLength;
         }
 
-        public void GenerateCaveStructure(InputPack inputPack)
+        private void GenerateCaveStructure(InputPack inputPack)
         {
             List<Vector2Int> baseNodeCoords = new List<Vector2Int>();
 
@@ -657,11 +686,11 @@ namespace Utilities
             {
                 for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
-                    if(CalculateChance(inputPack.NodeOccurChance + inputPack.Texture.GetPixel(coord_x, coord_y).r * inputPack.NodeOccurWeight))
+                    if(CalculateChance(inputPack.Chances[EChanceKinds.NodeOccurChance] + CalculateWeight(inputPack.Texture.GetPixel(coord_x, coord_y).r, inputPack.Chances[EChanceKinds.NodeOccurWeight])))
                     {
                         mnodeTable[coord_y, coord_x].Exist = true;
 
-                        if(CalculateChance(inputPack.NodeWebBaseDetermineChance))
+                        if(CalculateChance(inputPack.Chances[EChanceKinds.NodeWebBaseDetermineChance]))
                         {
                             mnodeTable[coord_y, coord_x].WebBase = true;
                             baseNodeCoords.Add(new Vector2Int(coord_x, coord_y));
@@ -675,7 +704,7 @@ namespace Utilities
             {
                 for(int j = 0; j < baseNodeCoords.Count; j++)
                 {
-                    if(i != j && baseNodeCoords[i].x != baseNodeCoords[j].x && baseNodeCoords[i].y != baseNodeCoords[j].y && CalculateChance(1.0f - inputPack.AbstractDiagonalChancePerNode * (float)(Math.Sqrt(Math.Pow(baseNodeCoords[i].x - baseNodeCoords[j].x , 2.0) + Math.Pow(baseNodeCoords[i].y - baseNodeCoords[j].y, 2.0)))))
+                    if(i != j && baseNodeCoords[i].x != baseNodeCoords[j].x && baseNodeCoords[i].y != baseNodeCoords[j].y && CalculateChance(1.0f - inputPack.Chances[EChanceKinds.AbstractDiagonalChancePerNode] * (float)(Math.Sqrt(Math.Pow(baseNodeCoords[i].x - baseNodeCoords[j].x , 2.0) + Math.Pow(baseNodeCoords[i].y - baseNodeCoords[j].y, 2.0)))))
                     {
                         mnodeTable[baseNodeCoords[i].y, baseNodeCoords[i].x].AbstractWebConnection.Add(baseNodeCoords[j]);
                     }
@@ -689,12 +718,12 @@ namespace Utilities
                 {
                     if(mnodeTable[coord_y, coord_x].Exist == false)
                     {
-                        mnodeTable[coord_y, coord_x].BridgeConnection.GenerateWebConnection(DetailAxisLength, DetectCurroundBridgeGate(new Vector2Int(coord_x, coord_y)), inputPack.NodeWebBaseDetermineChance);
+                        mnodeTable[coord_y, coord_x].BridgeConnection.GenerateWebConnection(DetailAxisLength, DetectCurroundBridgeGate(new Vector2Int(coord_x, coord_y)), inputPack.Chances[EChanceKinds.BridgeWebDetermineChance]);
                     }
                 }
             }
         }
-        public bool CalculateChance(float chance)
+        private bool CalculateChance(float chance)
         {
             if(chance >= 1.0f)
             {
@@ -707,7 +736,26 @@ namespace Utilities
 
             return UnityEngine.Random.Range(0.0f, 1.0f) <= chance ? true : false;
         }
-        public Dictionary<BridgeConnection.EDirction, float> DetectCurroundBridgeGate(Vector2Int curCoord)
+        private float CalculateWeight(float noiseValue, float weightValue)
+        {
+            float result = 0.0f;
+
+            if(noiseValue < 0.0f || noiseValue > 1.0f)
+            {
+                result = 0.0f;
+            }
+            else if(noiseValue >= 0.0f && noiseValue <= 0.5f)
+            {
+                result = noiseValue;
+            }
+            else
+            {
+                result = (-1.0f) * noiseValue + 1.0f;
+            }
+
+            return result;
+        }
+        private Dictionary<BridgeConnection.EDirction, float> DetectCurroundBridgeGate(Vector2Int curCoord)
         {
             Dictionary<BridgeConnection.EDirction, float> bridgeGates = new Dictionary<BridgeConnection.EDirction, float>();
 
@@ -721,6 +769,90 @@ namespace Utilities
             }
 
             return bridgeGates;
+        }
+        private void DetectNodeLinkedState()
+        {
+            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    if(coord_x - 1 >= 0 && NodeTable[coord_y, coord_x - 1].Exist)
+                    {
+                        mnodeTable[coord_y, coord_x].LinkedState.Add(Node.ELinkedState.West);
+                    }
+                    if(coord_y - 1 >= 0 && NodeTable[coord_y - 1, coord_x].Exist)
+                    {
+                        mnodeTable[coord_y, coord_x].LinkedState.Add(Node.ELinkedState.North);
+                    }
+                    if (coord_x + 1 < AbstractAxisLength.x && NodeTable[coord_y, coord_x + 1].Exist)
+                    {
+                        mnodeTable[coord_y, coord_x].LinkedState.Add(Node.ELinkedState.East);
+                    }
+                    if(coord_y + 1 < AbstractAxisLength.y && NodeTable[coord_y + 1, coord_x].Exist)
+                    {
+                        mnodeTable[coord_y, coord_x].LinkedState.Add(Node.ELinkedState.South);
+                    }
+                }
+            }
+        }
+
+    }
+    public class DetermineMapRealCoord
+    {
+        private List<Vector3Int[,]> mnodeTable;
+
+
+
+        public DetermineMapRealCoord(DirectNodeTable directNodeTable, int boundaryExtraSpace)
+        {
+            mnodeTable = new List<Vector3Int[,]>();
+            for(int count = 0; count < directNodeTable.FloorTable.Count; count++)
+            {
+                mnodeTable.Add(CalculateFloorRealCoords(directNodeTable.FloorTable[count], boundaryExtraSpace));
+            }
+        }
+
+        public List<Vector3Int[,]> NodeTable
+        {
+            get => mnodeTable;
+        }
+        public float DefaultCartoonCutUnit
+        {
+            get => 0.05f;
+        }
+
+        private Vector3Int[,] CalculateFloorRealCoords(FloorTable floorTable, int boundaryExtraSpace)
+        {
+            Vector3Int[,] table = new Vector3Int[floorTable.AbstractAxisLength.y * (floorTable.DetailAxisLength.y + 2 * boundaryExtraSpace), floorTable.AbstractAxisLength.x * (floorTable.DetailAxisLength.x + 2 * boundaryExtraSpace)];
+
+            for(int coord_y = 0; coord_y < floorTable.AbstractAxisLength.y; coord_y++)
+            {
+                for(int coord_x = 0; coord_x < floorTable.AbstractAxisLength.x; coord_x++)
+                {
+                    if(floorTable.NodeTable[coord_y, coord_x].Possible)
+                    {
+                        for (int detailCoord_y = 0; detailCoord_y < floorTable.DetailAxisLength.y; detailCoord_y++)
+                        {
+                            for (int detailCoord_x = 0; detailCoord_x < floorTable.DetailAxisLength.x; detailCoord_x++)
+                            {
+                                if ((floorTable.NodeTable[coord_y, coord_x].CaveStructure.LinkedState.Contains(CaveStructure.Node.ELinkedState.North) ? 0 : CalculateBoundaryFrequency(floorTable.HorizontalBoundaryFrequency[floorTable.FloorDepth], coord_x * floorTable.DetailAxisLength.x + detailCoord_x, boundaryExtraSpace)) >= detailCoord_y && (floorTable.NodeTable[coord_y, coord_x].CaveStructure.LinkedState.Contains(CaveStructure.Node.ELinkedState.South) ? floorTable.DetailAxisLength.y - 1 : floorTable.DetailAxisLength.y + CalculateBoundaryFrequency(floorTable.HorizontalBoundaryFrequency[floorTable.FloorDepth], coord_x * floorTable.DetailAxisLength.x + detailCoord_x, boundaryExtraSpace) - 1) <= detailCoord_y)
+                                {
+                                    if ((floorTable.NodeTable[coord_y, coord_x].CaveStructure.LinkedState.Contains(CaveStructure.Node.ELinkedState.West) ? 0 : CalculateBoundaryFrequency(floorTable.VerticalBoundaryFrequency[floorTable.FloorDepth], coord_y * floorTable.DetailAxisLength.y + detailCoord_y, boundaryExtraSpace)) >= detailCoord_x && (floorTable.NodeTable[coord_y, coord_x].CaveStructure.LinkedState.Contains(CaveStructure.Node.ELinkedState.East) ? floorTable.DetailAxisLength.x - 1 : floorTable.DetailAxisLength.x + CalculateBoundaryFrequency(floorTable.VerticalBoundaryFrequency[floorTable.FloorDepth], coord_y * floorTable.DetailAxisLength.y + detailCoord_y, boundaryExtraSpace) - 1) <= detailCoord_x)
+                                    {
+                                        table[coord_y * floorTable.DetailAxisLength.y + detailCoord_y, coord_x * floorTable.DetailAxisLength.x + detailCoord_x] = new Vector3Int(coord_x * floorTable.DetailAxisLength.x + detailCoord_x, coord_x * floorTable.DetailAxisLength.y + detailCoord_y, (int)(Math.Ceiling(floorTable.NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x] * boundaryExtraSpace) / boundaryExtraSpace));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return table;
+        }
+        private int CalculateBoundaryFrequency(List<float> frequency, int t, int boundaryExtraSpace)
+        {
+            return (int)(Math.Sin(frequency[0] * t) + Math.Sin(frequency[1] * t) + Math.Sin(frequency[2] * t) + Math.Sin(frequency[3] * t)) / 4 * boundaryExtraSpace;
         }
     }
 }

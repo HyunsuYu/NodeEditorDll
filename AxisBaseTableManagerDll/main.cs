@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using UnityEngine;
-using UnityEngine.Animations;
 
 namespace AxisBaseTableManager
 {
@@ -12,7 +11,7 @@ namespace AxisBaseTableManager
         private int[,,] mbiologyNodeTable;
         private int[,,] mpropNodeTable;
         private AxisBaseTablePalette maxisBaseTablePalette;
-        private Vector3Int mfundamentalAxisLength;
+        private Vector3Int mfundamentalAxisLength;  //  x = lava, y = glacier, z = eitr
 
 
 

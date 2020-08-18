@@ -1,6 +1,6 @@
-﻿using System;
+﻿using AxisBaseTableManager;
+using System;
 using System.Collections.Generic;
-using AxisBaseTableManager;
 using UnityEngine;
 using Utilities;
 
@@ -11,8 +11,8 @@ namespace DirectNodeEditor
     {
         public struct InputPack
         {
-            private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
-            private List<byte[]> mfloorPNGs;
+            private readonly DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
+            private readonly List<byte[]> mfloorPNGs;
 
             public InputPack(DirectNodeTableCoreInfo directNodeTableCoreInfo, List<byte[]> floorPNGs)
             {
@@ -32,8 +32,8 @@ namespace DirectNodeEditor
 
 
 
-        private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
-        private List<byte[]> mfloorPNGs;
+        private readonly DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
+        private readonly List<byte[]> mfloorPNGs;
 
 
 
@@ -51,6 +51,7 @@ namespace DirectNodeEditor
         {
             get => mfloorPNGs;
         }
+
         public List<Texture2D> DisorderByteDatas()
         {
             List<Texture2D> texture2Ds = new List<Texture2D>();
@@ -105,20 +106,14 @@ namespace DirectNodeEditor
     {
         public struct InputPack_Auto
         {
-            private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
-            private bool mbisGenerateSinkHole;
-            private bool mbisGenerateLava;
-            private bool mbisGenerateGlacier;
-            private bool mbisGenerateEitr;
-            private bool mbisGenerateValley;
+            private readonly DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
+            private readonly Dictionary<AxisBaseTablePalette.EFundamentalElements, bool> mgenerateFundamentalElements;
+            private readonly bool mbisGenerateValley;
 
-            public InputPack_Auto(DirectNodeTableCoreInfo directNodeTableCoreInfo, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr, bool bisGenerateValley)
+            public InputPack_Auto(DirectNodeTableCoreInfo directNodeTableCoreInfo, Dictionary<AxisBaseTablePalette.EFundamentalElements, bool> generateFundamentalElements, bool bisGenerateValley)
             {
                 mdirectNodeTableCoreInfo = directNodeTableCoreInfo;
-                mbisGenerateSinkHole = bisGenerateSinkHole;
-                mbisGenerateLava = bisGenerateLava;
-                mbisGenerateGlacier = bisGenerateGlacier;
-                mbisGenerateEitr = bisGenerateEitr;
+                mgenerateFundamentalElements = generateFundamentalElements;
                 mbisGenerateValley = bisGenerateValley;
             }
 
@@ -126,21 +121,9 @@ namespace DirectNodeEditor
             {
                 get => mdirectNodeTableCoreInfo;
             }
-            public bool IsGenerateSinkHole
+            public Dictionary<AxisBaseTablePalette.EFundamentalElements, bool> GenerateFundamentalElements
             {
-                get => mbisGenerateSinkHole;
-            }
-            public bool IsGenerateLava
-            {
-                get => mbisGenerateLava;
-            }
-            public bool IsGenerateGlacier
-            {
-                get => mbisGenerateGlacier;
-            }
-            public bool IsGenerateEitr
-            {
-                get => mbisGenerateEitr;
+                get => mgenerateFundamentalElements;
             }
             public bool IsGenerateValley
             {
@@ -149,7 +132,7 @@ namespace DirectNodeEditor
         }
         public struct InputPack_Manual
         {
-            private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
+            private readonly DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
 
             public InputPack_Manual(DirectNodeTableCoreInfo directNodeTableCoreInfo)
             {
@@ -164,8 +147,8 @@ namespace DirectNodeEditor
 
 
 
-        private List<FloorTable> mfloorTable;
-        private DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
+        private readonly List<FloorTable> mfloorTable;
+        private readonly DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
 
 
 
@@ -185,7 +168,15 @@ namespace DirectNodeEditor
             VallyCalculate vallyCalculate = new VallyCalculate(new VallyCalculate.InputPack(new Vector2Int((int)UnityEngine.Random.Range(0.0f, texture.width), (int)UnityEngine.Random.Range(0.0f, texture.height)), VallyCalculate.DefaultMaxVectorNum, VallyCalculate.DefaultMaxAmplitude, VallyCalculate.DefaultMaxPeriod, VallyCalculate.DefaultFrequency));
             for (int floorIndex = 0; floorIndex < DefaultFloorDepth; floorIndex++)
             {
-                mfloorTable.Add(new DirectNodeEditor.FloorTable(new DirectNodeEditor.FloorTable.InputPack_Auto(GetCutLine(floorIndex) / sum, texture, inputPack.IsGenerateSinkHole, inputPack.IsGenerateLava, inputPack.IsGenerateGlacier, inputPack.IsGenerateEitr, inputPack.IsGenerateValley, floorIndex, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength, vallyCalculate.GetNextFloorValleyCalculate(VallyCalculate.DefaultChangeAmplitudeAmount, VallyCalculate.DefaultChangePeriodAmount))));
+                Dictionary<CaveStructure.EChanceKinds, float> chances = new Dictionary<CaveStructure.EChanceKinds, float>();
+                chances.Add(CaveStructure.EChanceKinds.NodeOccurChance, GetChance(CaveStructure.EChanceKinds.NodeOccurChance, floorIndex));
+                chances.Add(CaveStructure.EChanceKinds.NodeOccurWeight, GetChance(CaveStructure.EChanceKinds.NodeOccurWeight, floorIndex));
+                chances.Add(CaveStructure.EChanceKinds.NodeWebBaseDetermineChance, GetChance(CaveStructure.EChanceKinds.NodeWebBaseDetermineChance, floorIndex));
+                chances.Add(CaveStructure.EChanceKinds.BridgeWebDetermineChance, GetChance(CaveStructure.EChanceKinds.BridgeWebDetermineChance, floorIndex));
+                chances.Add(CaveStructure.EChanceKinds.AbstractDiagonalChancePerNode, GetChance(CaveStructure.EChanceKinds.AbstractDiagonalChancePerNode, floorIndex));
+                chances.Add(CaveStructure.EChanceKinds.DetailDiagonalChancePerNode, GetChance(CaveStructure.EChanceKinds.DetailDiagonalChancePerNode, floorIndex));
+
+                mfloorTable.Add(new DirectNodeEditor.FloorTable(new DirectNodeEditor.FloorTable.InputPack_Auto(GetCutLine(floorIndex) / sum, texture, inputPack.GenerateFundamentalElements, inputPack.IsGenerateValley, floorIndex, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength, vallyCalculate.GetNextFloorValleyCalculate(VallyCalculate.DefaultChangeAmplitudeAmount, VallyCalculate.DefaultChangePeriodAmount), chances, DirectNodeTableCoreInfo)));
             }
         }
         public DirectNodeTable(InputPack_Manual inputPack)
@@ -248,6 +239,145 @@ namespace DirectNodeEditor
 
             return mfloorTable[floorIndex].RemoveNode(abstractCoord, detailCoord, targetNodePrimeNumber, paletteType);
         }
+        public bool SetHeightValueInFloor(int floorIndex, Vector2Int realCoord, float targetValue)
+        {
+            if (floorIndex < 0 || floorIndex >= mfloorTable.Count)
+            {
+                return false;
+            }
+
+            return mfloorTable[floorIndex].SetHeightValue(new Vector2Int(realCoord.x / FloorTable[floorIndex].DetailAxisLength.x, realCoord.y / FloorTable[floorIndex].DetailAxisLength.y), new Vector2Int(realCoord.x % FloorTable[floorIndex].DetailAxisLength.x, realCoord.y % FloorTable[floorIndex].DetailAxisLength.y), targetValue);
+        }
+        public bool SetAbstractAxisLengthInFloor(int floorIndex, Vector2Int newAbstractLength, FloorTable.EAnchor anchor)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].SetAbstractAxisLength(newAbstractLength, anchor);
+
+            return true;
+        }
+        public bool DetermineTableHeightInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DetermineTableHeight();
+
+            return true;
+        }
+        public bool DetermineSinkHoleInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DetermineSinkHole();
+
+            return true;
+        }
+        public bool DetermineValleyInFloor(int floorIndex, Vector2Int coord, int maxVectorNum, int maxAmplitude, int maxPeriod, double frequency)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DetermineValley(new VallyCalculate(new VallyCalculate.InputPack(coord, maxVectorNum, maxAmplitude, maxPeriod, frequency)));
+
+            return true;
+        }
+        public bool DetermineLavaInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DetermineLava();
+
+            return true;
+        }
+        public bool DetermineGlacierInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DetermineGlacier();
+
+            return true;
+        }
+        public bool DetermineEitrInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DetermineEitr();
+
+            return true;
+        }
+        public bool GenerateCaveStructureInFloor(int floorIndex, Dictionary<CaveStructure.EChanceKinds, float> chances)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].GenerateCaveStructure(chances);
+
+            return true;
+        }
+        public Texture2D GetCurrentHeightMapInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return null;
+            }
+
+            return FloorTable[floorIndex].GetCurrentHeightMap();
+        }
+        public bool DetermineGeologyNodesInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DetermineGeologyNodes(DirectNodeTableCoreInfo);
+
+            return true;
+        }
+        public bool DetermineBiologyNodesInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DetermineBiologyNodes(DirectNodeTableCoreInfo);
+
+            return true;
+        }
+        public bool DeterminePropNodesInFloor(int floorIndex)
+        {
+            if (floorIndex < 0 || floorIndex > mfloorTable.Count - 1)
+            {
+                return false;
+            }
+
+            FloorTable[floorIndex].DeterminePropNodes(DirectNodeTableCoreInfo);
+
+            return true;
+        }
         public void AddFloor()
         {
             mfloorTable.Add(new FloorTable(new DirectNodeEditor.FloorTable.InputPack_Manual(new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisAbstractLength, DirectNodeEditor.FloorTable.DefaultAxisAbstractLength), new Vector2Int(DirectNodeEditor.FloorTable.DefaultAxisDetailLength, DirectNodeEditor.FloorTable.DefaultAxisDetailLength), mfloorTable.Count, DirectNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength)));
@@ -298,19 +428,8 @@ namespace DirectNodeEditor
 
             return false;
         }
-        public bool SetFloorAbstractAxisLength(int index, Vector2Int newAbstractLength, FloorTable.EAnchor anchor)
-        {
-            if (index < 0 || index > mfloorTable.Count - 1)
-            {
-                return false;
-            }
 
-            FloorTable[index].SetAbstractAxisLength(newAbstractLength, anchor);
-
-            return true;
-        }
-
-        internal Texture2D GenerateMapBoundaryNoiseMap()
+        private Texture2D GenerateMapBoundaryNoiseMap()
         {
             Texture2D texture = new Texture2D(DirectNodeEditor.FloorTable.DefaultAxisAbstractLength, DirectNodeEditor.FloorTable.DefaultAxisAbstractLength);
 
@@ -351,12 +470,12 @@ namespace DirectNodeEditor
                     texture.SetPixel(coord_x, coord_y, new Color(noiseValue, noiseValue, noiseValue));
                 }
             }
-            
+
 
             random = null;
             return texture;
         }
-        internal float GetCutLine(int floorIndex)
+        private float GetCutLine(int floorIndex)
         {
             float returnValue = 0.0f;
 
@@ -415,12 +534,45 @@ namespace DirectNodeEditor
 
             return returnValue;
         }
+        private float GetChance(CaveStructure.EChanceKinds chanceKind, int floorDepth)
+        {
+            float chance = 0.0f;
+
+            switch (chanceKind)
+            {
+                case CaveStructure.EChanceKinds.NodeOccurChance:
+                    chance = (-1.0f) * (0.2f / 33.0f) * floorDepth + 0.3f;
+                    break;
+
+                case CaveStructure.EChanceKinds.NodeOccurWeight:
+                    chance = 0.1f;
+                    break;
+
+                case CaveStructure.EChanceKinds.NodeWebBaseDetermineChance:
+                    chance = 0.01f;
+                    break;
+
+                case CaveStructure.EChanceKinds.BridgeWebDetermineChance:
+                    chance = 0.2f;
+                    break;
+
+                case CaveStructure.EChanceKinds.AbstractDiagonalChancePerNode:
+                    chance = 0.02f;
+                    break;
+
+                case CaveStructure.EChanceKinds.DetailDiagonalChancePerNode:
+                    chance = 0.05f;
+                    break;
+            }
+
+            return chance;
+        }
     }
     public class DirectNodeTableCoreInfo
     {
         public struct InputPack
         {
-            AxisBaseTable maxisBaseTable;
+            private readonly AxisBaseTable maxisBaseTable;
 
             public InputPack(AxisBaseTable axisBaseTable)
             {
@@ -435,12 +587,12 @@ namespace DirectNodeEditor
 
 
 
-        private AxisBaseTable maxisBaseTable;
-        private List<NodeEncoding.EncodingNodeData> mgeologyEncodingNodeDatas;
-        private List<NodeEncoding.EncodingNodeData> mbiologyEncodingNodeDatas;
-        private List<NodeEncoding.EncodingNodeData> mpropEncodingBideDatas;
-        private List<Vector2Int> mfloorAbstractAxisLengths;
-        private List<Vector2Int> mfloorDetailAxisLengths;
+        private readonly AxisBaseTable maxisBaseTable;
+        private readonly List<NodeEncoding.EncodingNodeData> mgeologyEncodingNodeDatas;
+        private readonly List<NodeEncoding.EncodingNodeData> mbiologyEncodingNodeDatas;
+        private readonly List<NodeEncoding.EncodingNodeData> mpropEncodingBideDatas;
+        private readonly List<Vector2Int> mfloorAbstractAxisLengths;
+        private readonly List<Vector2Int> mfloorDetailAxisLengths;
 
 
 
@@ -450,6 +602,7 @@ namespace DirectNodeEditor
             maxisBaseTable = inputPack.AxisBaseTable;
             mgeologyEncodingNodeDatas = NodeEncoding.GetEncodingNodeDatas(AxisBaseTable.AxisBaseTablePalette, AxisBaseTablePalette.EPaletteType.Geology);
             mbiologyEncodingNodeDatas = NodeEncoding.GetEncodingNodeDatas(AxisBaseTable.AxisBaseTablePalette, AxisBaseTablePalette.EPaletteType.Biology);
+            mpropEncodingBideDatas = NodeEncoding.GetEncodingNodeDatas(AxisBaseTable.AxisBaseTablePalette, AxisBaseTablePalette.EPaletteType.Prop);
             mfloorAbstractAxisLengths = new List<Vector2Int>();
             mfloorDetailAxisLengths = new List<Vector2Int>();
         }
@@ -499,12 +652,14 @@ namespace DirectNodeEditor
 
         public class Node
         {
-            private int[,] mgeologyNodeTable;
-            private int[,] mbiologyNodeTable;
-            private int[,] mpropNodeTable;
-            private float[,] mheightTable;
-            private int[,] mfundamentalElementsTable;
-            private int[,] mfundamentalElementsInflunceTable;
+            private readonly int[,] mgeologyNodeTable;
+            private readonly int[,] mbiologyNodeTable;
+            private readonly int[,] mpropNodeTable;
+            private readonly float[,] mheightTable;
+            private readonly int[,] mfundamentalElementsTable;
+            private readonly Dictionary<AxisBaseTablePalette.EFundamentalElements, int>[,] mfundamentalElementsInflunceTable;
+            private CaveStructure.Node mcaveStructure;
+            private bool mbpossible;
 
 
 
@@ -515,18 +670,20 @@ namespace DirectNodeEditor
                 mpropNodeTable = new int[DefaultAxisDetailLength, DefaultAxisDetailLength];
                 mheightTable = new float[DefaultAxisDetailLength, DefaultAxisDetailLength];
                 mfundamentalElementsTable = new int[DefaultAxisDetailLength, DefaultAxisDetailLength];
-                mfundamentalElementsInflunceTable = new int[DefaultAxisDetailLength, DefaultAxisDetailLength];
+                mfundamentalElementsInflunceTable = new Dictionary<AxisBaseTablePalette.EFundamentalElements, int>[DefaultAxisAbstractLength, DefaultAxisAbstractLength];
+                mcaveStructure = null;
+                mbpossible = false;
 
-                for(int coord_y = 0; coord_y < DefaultAxisDetailLength; coord_y++)
+                for (int coord_y = 0; coord_y < DefaultAxisDetailLength; coord_y++)
                 {
-                    for(int coord_x = 0; coord_x < DefaultAxisDetailLength; coord_x++)
+                    for (int coord_x = 0; coord_x < DefaultAxisDetailLength; coord_x++)
                     {
                         mgeologyNodeTable[coord_y, coord_x] = 1;
                         mbiologyNodeTable[coord_y, coord_x] = 1;
                         mpropNodeTable[coord_y, coord_x] = 1;
                         mheightTable[coord_y, coord_x] = 0.0f;
                         mfundamentalElementsTable[coord_y, coord_x] = 1;
-                        mfundamentalElementsInflunceTable[coord_y, coord_x] = 1;
+                        mfundamentalElementsInflunceTable[coord_y, coord_x] = new Dictionary<AxisBaseTablePalette.EFundamentalElements, int>();
                     }
                 }
             }
@@ -537,7 +694,9 @@ namespace DirectNodeEditor
                 mpropNodeTable = new int[detailAxisLength.y, detailAxisLength.x];
                 mheightTable = new float[detailAxisLength.y, detailAxisLength.x];
                 mfundamentalElementsTable = new int[detailAxisLength.y, detailAxisLength.x];
-                mfundamentalElementsInflunceTable = new int[detailAxisLength.y, detailAxisLength.x];
+                mfundamentalElementsInflunceTable = new Dictionary<AxisBaseTablePalette.EFundamentalElements, int>[detailAxisLength.y, detailAxisLength.x];
+                mcaveStructure = null;
+                mbpossible = false;
 
                 for (int coord_y = 0; coord_y < detailAxisLength.y; coord_y++)
                 {
@@ -548,70 +707,70 @@ namespace DirectNodeEditor
                         mpropNodeTable[coord_y, coord_x] = 1;
                         mheightTable[coord_y, coord_x] = 0.0f;
                         mfundamentalElementsTable[coord_y, coord_x] = 1;
-                        mfundamentalElementsInflunceTable[coord_y, coord_x] = 1;
+                        mfundamentalElementsInflunceTable[coord_y, coord_x] = new Dictionary<AxisBaseTablePalette.EFundamentalElements, int>();
                     }
                 }
             }
 
-            internal int[,] GeologyNodeTable
+            public int[,] GeologyNodeTable
             {
                 get => mgeologyNodeTable;
-                set => mgeologyNodeTable = value;
             }
-            internal int[,] BiologyNodeTable
+            public int[,] BiologyNodeTable
             {
                 get => mbiologyNodeTable;
-                set => mbiologyNodeTable = value;
             }
-            internal int[,] PropNodeTable
+            public int[,] PropNodeTable
             {
                 get => mpropNodeTable;
-                set => mpropNodeTable = value;
             }
-            internal float[,] HeightTable
+            public float[,] HeightTable
             {
                 get => mheightTable;
-                set => mheightTable = value;
             }
-            internal int[,] FundamentalElementsTable
+            public int[,] FundamentalElementsTable
             {
                 get => mfundamentalElementsTable;
-                set => mfundamentalElementsTable = value;
             }
-            internal int[,] FundamentalElementsInflunceTable
+            public Dictionary<AxisBaseTablePalette.EFundamentalElements, int>[,] FundamentalElementsInflunceTable
             {
                 get => mfundamentalElementsInflunceTable;
-                set => mfundamentalElementsInflunceTable = value;
+            }
+            public CaveStructure.Node CaveStructure
+            {
+                get => mcaveStructure;
+                set => mcaveStructure = value;
+            }
+            public bool Possible
+            {
+                get => mbpossible;
+                set => mbpossible = value;
             }
         }
 
         public struct InputPack_Auto
         {
-            private float mnoiseMapCutLine;
-            private Texture2D mnoiseTexture;
-            private bool mbisGenerateSinkHole;
-            private bool mbisGenerateLava;
-            private bool mbisGenerateGlacier;
-            private bool mbisGenerateEitr;
-            private bool mbisGenerateValley;
-            private int mfloorDepth;
+            private readonly float mnoiseMapCutLine;
+            private readonly Texture2D mnoiseTexture;
+            private readonly Dictionary<AxisBaseTablePalette.EFundamentalElements, bool> mgenerateFundamentalElements;
+            private readonly bool mbisGenerateValley;
+            private readonly int mfloorDepth;
             private Vector3Int mfundamentalInfluenceRadius;
-            private VallyCalculate mvallyCalculate;
-            private CaveStructureChancePack mcaveStructureChancePack;
+            private readonly VallyCalculate mvallyCalculate;
+            private readonly Dictionary<CaveStructure.EChanceKinds, float> mchances;
+            private readonly DirectNodeTableCoreInfo mdirectNodeTableCoreInfo;
 
-            public InputPack_Auto(float noiseMapCutLine, Texture2D noiseTexture, bool bisGenerateSinkHole, bool bisGenerateLava, bool bisGenerateGlacier, bool bisGenerateEitr, bool bisGenerateValley, int floorDepth, Vector3Int fundamentalInfluenceRadius, VallyCalculate vallyCalculate, CaveStructureChancePack caveStructureChancePack)
+            public InputPack_Auto(float noiseMapCutLine, Texture2D noiseTexture, Dictionary<AxisBaseTablePalette.EFundamentalElements, bool> generateFundamenralElements, bool isGenerateValley, int floorDepth, Vector3Int fundamentalInfluenceRadius, VallyCalculate vallyCalculate, Dictionary<CaveStructure.EChanceKinds, float> chances, DirectNodeTableCoreInfo directNodeTableCoreInfo)
             {
                 mnoiseMapCutLine = noiseMapCutLine;
                 mnoiseTexture = noiseTexture;
-                mbisGenerateSinkHole = bisGenerateSinkHole;
-                mbisGenerateLava = bisGenerateLava;
-                mbisGenerateGlacier = bisGenerateGlacier;
-                mbisGenerateEitr = bisGenerateEitr;
-                mbisGenerateValley = bisGenerateValley;
+                mgenerateFundamentalElements = generateFundamenralElements;
+                mbisGenerateValley = isGenerateValley;
                 mfloorDepth = floorDepth;
                 mfundamentalInfluenceRadius = fundamentalInfluenceRadius;
                 mvallyCalculate = vallyCalculate;
-                mcaveStructureChancePack = caveStructureChancePack;
+                mchances = chances;
+                mdirectNodeTableCoreInfo = directNodeTableCoreInfo;
             }
 
             public float NoiseMapCutLine
@@ -622,21 +781,9 @@ namespace DirectNodeEditor
             {
                 get => mnoiseTexture;
             }
-            public bool IsGenerateSinkHole
+            public Dictionary<AxisBaseTablePalette.EFundamentalElements, bool> GenerateFundatemtalElements
             {
-                get => mbisGenerateSinkHole;
-            }
-            public bool IsGenerateLava
-            {
-                get => mbisGenerateLava;
-            }
-            public bool IsGenerateGlacier
-            {
-                get => mbisGenerateGlacier;
-            }
-            public bool IsGenerateEitr
-            {
-                get => mbisGenerateEitr;
+                get => mgenerateFundamentalElements;
             }
             public bool IsGenerateValley
             {
@@ -654,16 +801,20 @@ namespace DirectNodeEditor
             {
                 get => mvallyCalculate;
             }
-            public CaveStructureChancePack CaveStructureChancePack
+            public Dictionary<CaveStructure.EChanceKinds, float> Chances
             {
-                get => mcaveStructureChancePack;
+                get => mchances;
+            }
+            public DirectNodeTableCoreInfo DirectNodeTableCoreInfo
+            {
+                get => mdirectNodeTableCoreInfo;
             }
         }
         public struct InputPack_Manual
         {
             private Vector2Int mabstractAxisLength;
             private Vector2Int mdetailAxisLength;
-            private int mfloorDepth;
+            private readonly int mfloorDepth;
             private Vector3Int mfundamentalInfluenceRadius;
 
             public InputPack_Manual(Vector2Int abstractAxisLength, Vector2Int detailAxisLength, int floorDepth, Vector3Int fundamentalInfluenceRadius)
@@ -691,59 +842,14 @@ namespace DirectNodeEditor
                 get => mfundamentalInfluenceRadius;
             }
         }
-        public struct CaveStructureChancePack
-        {
-            private float mnodeOccurChance, mbridgeOccurChance, mnodeOccurWeight, mnodeWebBaseDetermineChance, mnodeWebConnectionChance;
-            private float mabstractDiagonalChancePerNode, mdetailDiagonalChancePerNode;
-
-            public CaveStructureChancePack(float nodeOccurChance, float bridgeOccurChance, float nodeOccurWeight, float nodeWebBaseDetermineChance, float nodeWebConnectionChance, float abstractDiagonalChancePerNode, float detailDiagonalChancePerNode)
-            {
-                mnodeOccurChance = nodeOccurChance;
-                mbridgeOccurChance = bridgeOccurChance;
-                mnodeOccurWeight = nodeOccurWeight;
-                mnodeWebBaseDetermineChance = nodeWebBaseDetermineChance;
-                mnodeWebConnectionChance = nodeWebConnectionChance;
-                mabstractDiagonalChancePerNode = abstractDiagonalChancePerNode;
-                mdetailDiagonalChancePerNode = detailDiagonalChancePerNode;
-            }
-
-            public float NodeOccurChance
-            {
-                get => mnodeOccurChance;
-            }
-            public float BridgeOccurChance
-            {
-                get => mbridgeOccurChance;
-            }
-            public float NodeOccurWeight
-            {
-                get => mnodeOccurWeight;
-            }
-            public float NodeWebBaseDetermineChance
-            {
-                get => mnodeWebBaseDetermineChance;
-            }
-            public float NodeWebConnectionChance
-            {
-                get => mnodeWebConnectionChance;
-            }
-            public float AbstractDiagonalChancePerNode
-            {
-                get => mabstractDiagonalChancePerNode;
-            }
-            public float DetailDiagonalChancePerNode
-            {
-                get => mdetailDiagonalChancePerNode;
-            }
-        }
 
 
 
         private Node[,] mnodeTable;
-        private Vector2Int mabstractAxisLength;
-        private Vector2Int mdetailAxisLength;
-        private int mfloorDepth;
+        private Vector2Int mabstractAxisLength, mdetailAxisLength;
         private Vector3Int mfundamentalInfluenceRadius;
+        private List<List<float>> mverticalBoundaryFrequency, mhorizontalBoundaryFrequency;
+        private readonly int mfloorDepth;
 
 
 
@@ -752,7 +858,8 @@ namespace DirectNodeEditor
             mfloorDepth = inputPack.FloorDepth;
             mfundamentalInfluenceRadius = inputPack.FundamentalInfluenceRadius;
 
-            mabstractAxisLength = new Vector2Int(inputPack.NoiseTexture.width, inputPack.NoiseTexture.height);
+            mabstractAxisLength = new Vector2Int(DefaultAxisAbstractLength, DefaultAxisAbstractLength);
+            mdetailAxisLength = new Vector2Int(DefaultAxisDetailLength, DefaultAxisDetailLength);
             mnodeTable = new Node[AbstractAxisLength.y, AbstractAxisLength.x];
 
             bool[,] blankTable = new bool[AbstractAxisLength.y, AbstractAxisLength.x];
@@ -767,21 +874,21 @@ namespace DirectNodeEditor
 
             CalculateFloorBoundary(ref blankTable, inputPack);
 
-            DetermineTableheight();
+            DetermineTableHeight();
 
-            if(inputPack.IsGenerateLava)
+            if (inputPack.GenerateFundatemtalElements[AxisBaseTablePalette.EFundamentalElements.Lava])
             {
                 DetermineLava();
             }
-            if(inputPack.IsGenerateGlacier)
+            if (inputPack.GenerateFundatemtalElements[AxisBaseTablePalette.EFundamentalElements.Glacier])
             {
                 DetermineGlacier();
             }
-            if(inputPack.IsGenerateEitr)
+            if (inputPack.GenerateFundatemtalElements[AxisBaseTablePalette.EFundamentalElements.Eitr])
             {
                 DetermineEitr();
             }
-            if(inputPack.IsGenerateSinkHole)
+            if (inputPack.GenerateFundatemtalElements[AxisBaseTablePalette.EFundamentalElements.SinkHole])
             {
                 DetermineSinkHole();
             }
@@ -790,11 +897,11 @@ namespace DirectNodeEditor
                 DetermineValley(inputPack.VallyCalculate);
             }
 
-            GenerateCaveStructure(inputPack.CaveStructureChancePack);
+            GenerateCaveStructure(inputPack.Chances);
 
-            DetermineGeologyNodes();
-            DetermineBiologyNodes();
-            DeterminePropNodes();
+            DetermineGeologyNodes(inputPack.DirectNodeTableCoreInfo);
+            DetermineBiologyNodes(inputPack.DirectNodeTableCoreInfo);
+            DeterminePropNodes(inputPack.DirectNodeTableCoreInfo);
         }
         public FloorTable(InputPack_Manual inputPack)
         {
@@ -802,6 +909,7 @@ namespace DirectNodeEditor
             mfundamentalInfluenceRadius = inputPack.FundamentalInfluenceRadius;
 
             mabstractAxisLength = inputPack.AbstractAxisLength;
+            mdetailAxisLength = inputPack.DetailAxisLength;
             mnodeTable = new Node[AbstractAxisLength.y, AbstractAxisLength.x];
 
             for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
@@ -818,6 +926,7 @@ namespace DirectNodeEditor
             mfundamentalInfluenceRadius = fundamentalInfluenceRadius;
 
             mabstractAxisLength = abstractAxisLength;
+            mdetailAxisLength = detailAxisLength;
             mnodeTable = new Node[AbstractAxisLength.y, AbstractAxisLength.x];
             for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
@@ -827,19 +936,18 @@ namespace DirectNodeEditor
                 }
             }
 
-            int detailCoord_x = 0, detailCoord_y = 0;
             for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
                 for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
-                    for (int i = 0; i < detailAxisLength.y; i++, detailCoord_y++)
+                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
                     {
-                        for (int j = 0; j < detailAxisLength.x; j++, detailCoord_x++)
+                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
                         {
-                            mnodeTable[coord_y, coord_x].GeologyNodeTable[i, j] = geologyNodeTable[detailCoord_y, detailCoord_x];
-                            mnodeTable[coord_y, coord_x].BiologyNodeTable[i, j] = biologyNodeTable[detailCoord_y, detailCoord_x];
-                            mnodeTable[coord_y, coord_x].PropNodeTable[i, j] = propNodeTable[detailCoord_y, detailCoord_x];
-                            mnodeTable[coord_y, coord_x].HeightTable[i, j] = heightTable[detailCoord_y, detailCoord_x];
+                            mnodeTable[coord_y, coord_x].GeologyNodeTable[detailCoord_y, detailCoord_x] = geologyNodeTable[coord_y * DetailAxisLength.y + detailCoord_y, coord_x * DetailAxisLength.x + detailCoord_x];
+                            mnodeTable[coord_y, coord_x].BiologyNodeTable[detailCoord_y, detailCoord_x] = biologyNodeTable[coord_y * DetailAxisLength.y + detailCoord_y, coord_x * DetailAxisLength.x + detailCoord_x];
+                            mnodeTable[coord_y, coord_x].PropNodeTable[detailCoord_y, detailCoord_x] = propNodeTable[coord_y * DetailAxisLength.y + detailCoord_y, coord_x * detailAxisLength.x + detailCoord_x];
+                            mnodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x] = heightTable[coord_y * DetailAxisLength.y + detailCoord_y, coord_x * DetailAxisLength.x + detailCoord_x];
                         }
                     }
                 }
@@ -865,6 +973,14 @@ namespace DirectNodeEditor
         public Vector3Int FundamentalInfluenceRadius
         {
             get => mfundamentalInfluenceRadius;
+        }
+        public List<List<float>> VerticalBoundaryFrequency
+        {
+            get => mverticalBoundaryFrequency;
+        }
+        public List<List<float>> HorizontalBoundaryFrequency
+        {
+            get => mhorizontalBoundaryFrequency;
         }
 
         internal float DownerValueBoundary
@@ -983,9 +1099,9 @@ namespace DirectNodeEditor
         internal void SetAbstractAxisLength(Vector2Int newAbstractLength, EAnchor anchor)
         {
             Node[,] tempNodeTable = new Node[newAbstractLength.y, newAbstractLength.x];
-            for(int coord_y = 0; coord_y < newAbstractLength.y; coord_y++)
+            for (int coord_y = 0; coord_y < newAbstractLength.y; coord_y++)
             {
-                for(int coord_x = 0; coord_x < newAbstractLength.x; coord_x++)
+                for (int coord_x = 0; coord_x < newAbstractLength.x; coord_x++)
                 {
                     tempNodeTable[coord_y, coord_x] = new Node(DetailAxisLength);
                 }
@@ -993,7 +1109,7 @@ namespace DirectNodeEditor
 
             Vector2Int startOoord = new Vector2Int(), endCoord = new Vector2Int();
 
-            switch(anchor)
+            switch (anchor)
             {
                 case EAnchor.TopLeft:
                     startOoord = new Vector2Int(0, 0);
@@ -1041,9 +1157,9 @@ namespace DirectNodeEditor
                     break;
             }
 
-            for(int coord_y = startOoord.y; coord_y < endCoord.y; coord_y++)
+            for (int coord_y = startOoord.y; coord_y < endCoord.y; coord_y++)
             {
-                for(int coord_x =startOoord.x; coord_x < endCoord.x; coord_x++)
+                for (int coord_x = startOoord.x; coord_x < endCoord.x; coord_x++)
                 {
                     tempNodeTable[coord_y, coord_x] = NodeTable[coord_y, coord_x];
                 }
@@ -1065,19 +1181,18 @@ namespace DirectNodeEditor
             float[,] propFloatTable = new float[AbstractAxisLength.y, AbstractAxisLength.x];
             float[,] heightTable = new float[AbstractAxisLength.y, AbstractAxisLength.x];
 
-            int realCoord_x = 0, realCoord_y = 0;
             for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
                 for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
-                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++, realCoord_y++)
+                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
                     {
-                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++, realCoord_x++)
+                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
                         {
-                            geologyIntTable[realCoord_y, realCoord_x] = mnodeTable[coord_y, coord_x].GeologyNodeTable[detailCoord_y, detailCoord_x];
-                            biologyIntTable[realCoord_y, realCoord_x] = mnodeTable[coord_y, coord_x].BiologyNodeTable[detailCoord_y, detailCoord_x];
-                            propIntTable[realCoord_y, realCoord_x] = mnodeTable[coord_y, coord_x].PropNodeTable[detailCoord_y, detailCoord_x];
-                            heightTable[realCoord_y, realCoord_x] = mnodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x];
+                            geologyIntTable[coord_y * DetailAxisLength.y + detailCoord_y, coord_x * DetailAxisLength.x + detailCoord_x] = mnodeTable[coord_y, coord_x].GeologyNodeTable[detailCoord_y, detailCoord_x];
+                            biologyIntTable[coord_y * DetailAxisLength.y + detailCoord_y, coord_x * DetailAxisLength.x + detailCoord_x] = mnodeTable[coord_y, coord_x].BiologyNodeTable[detailCoord_y, detailCoord_x];
+                            propIntTable[coord_y * DetailAxisLength.y + detailCoord_y, coord_x * DetailAxisLength.x + detailCoord_x] = mnodeTable[coord_y, coord_x].PropNodeTable[detailCoord_y, detailCoord_x];
+                            heightTable[coord_y * DetailAxisLength.y + detailCoord_y, coord_x * DetailAxisLength.x + detailCoord_x] = mnodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x];
                         }
                     }
                 }
@@ -1098,15 +1213,266 @@ namespace DirectNodeEditor
 
             return texture2D;
         }
-        internal void CalculateFloorBoundary(ref bool[,] blankTable, in InputPack_Auto inputPack)
+        internal void DetermineTableHeight()
         {
-            float curRealCutLine = inputPack.NoiseMapCutLine * (UpperValueBoundary - DownerValueBoundary);
+            Texture2D texture = GenerateNoiseMapTexture();
 
             for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
                 for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
                 {
-                    if (inputPack.NoiseTexture.GetPixel(coord_x, coord_y).r >= curRealCutLine)
+                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
+                    {
+                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
+                        {
+                            mnodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x] = texture.GetPixel(coord_x * DetailAxisLength.x + detailCoord_x, coord_y * DetailAxisLength.y + detailCoord_y).r;
+                        }
+                    }
+                }
+            }
+        }        
+        internal void DetermineSinkHole()
+        {
+            System.Random random = new System.Random();
+
+            int totalSinkHoleNumber = (-1) * (FloorDepth + 3) * (FloorDepth - 30) / 90 + random.Next(-1, 2);
+
+            if (totalSinkHoleNumber > 0)
+            {
+                Vector2Int vector = new Vector2Int();
+
+                for (int i = 0; i < totalSinkHoleNumber; i++)
+                {
+                    while (true)
+                    {
+                        vector.x = random.Next(0, AbstractAxisLength.x);
+                        vector.y = random.Next(0, AbstractAxisLength.y);
+
+                        if (mnodeTable[vector.y / DetailAxisLength.y, vector.x / DetailAxisLength.x].FundamentalElementsTable[vector.y % DetailAxisLength.y, vector.x % DetailAxisLength.x] == 1)
+                        {
+                            break;
+                        }
+                    }
+
+                    SetHoleNodes(vector, 5.0f, 25.0f);
+                }
+            }
+
+            random = null;
+        }
+        internal void DetermineValley(VallyCalculate vallyCalculate)
+        {
+            List<Vector2Int> vectors = vallyCalculate.CalsulateValley(VallyCalculate.DefaultExtraTime);
+
+            for (int i = 0; i < vectors.Count; i++)
+            {
+                SetHoleNodes(vectors[i], 10.0f, 20.0f);
+            }
+        }
+        internal void DetermineLava()
+        {
+            int lavaNum = (int)((-1) * (FloorDepth - 10) * (Math.Pow((FloorDepth - 28), 3) / 1845.2));
+
+            System.Random random = new System.Random();
+            List<Vector2Int> coordList = new List<Vector2Int>();
+            for (int i = 0; i < lavaNum; i++)
+            {
+                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Lava, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
+            }
+
+            for (int i = 0; i < lavaNum; i++)
+            {
+                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Lava, coordList[i]);
+            }
+
+            random = null;
+        }
+        internal void DetermineGlacier()
+        {
+            int glacierNum = (int)((-1) * FloorDepth * Math.Pow((FloorDepth - 20), 3) / 4219);
+
+            System.Random random = new System.Random();
+            List<Vector2Int> coordList = new List<Vector2Int>();
+            for (int i = 0; i < glacierNum; i++)
+            {
+                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Glacier, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
+            }
+
+            for (int i = 0; i < glacierNum; i++)
+            {
+                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Glacier, coordList[i]);
+            }
+
+            random = null;
+        }
+        internal void DetermineEitr()
+        {
+            int eitrNum = (int)((-1) * (FloorDepth + 11) * (Math.Pow((FloorDepth - 33), 33) / 197653) + 1);
+
+            System.Random random = new System.Random();
+            List<Vector2Int> coordList = new List<Vector2Int>();
+            for (int i = 0; i < eitrNum; i++)
+            {
+                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Eitr, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
+            }
+
+            for (int i = 0; i < eitrNum; i++)
+            {
+                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Eitr, coordList[i]);
+            }
+
+            random = null;
+        }
+        internal void GenerateCaveStructure(Dictionary<CaveStructure.EChanceKinds, float> chances)
+        {
+            CaveStructure caveStructure = new CaveStructure(new CaveStructure.InputPack(GetCurrentHeightMap(), AbstractAxisLength, DetailAxisLength, chances));
+
+            mverticalBoundaryFrequency = caveStructure.VerticalBoundaryFrequency;
+            mhorizontalBoundaryFrequency = caveStructure.HorizontalBoundaryFrequency;
+
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    mnodeTable[coord_y, coord_x].CaveStructure = caveStructure.NodeTable[coord_y, coord_x];
+                }
+            }
+        }
+        internal Texture2D GetCurrentHeightMap()
+        {
+            Texture2D texture = new Texture2D(AbstractAxisLength.x * DetailAxisLength.x, AbstractAxisLength.y * DetailAxisLength.y);
+
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
+                    {
+                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
+                        {
+                            texture.SetPixel(coord_x * DetailAxisLength.x + detailCoord_x, coord_y * DetailAxisLength.y + detailCoord_y, new Color(NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x], NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x], NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x]));
+                        }
+                    }
+                }
+            }
+            texture.Apply();
+
+            return texture;
+        }
+        internal void DetermineGeologyNodes(DirectNodeTableCoreInfo directNodeTableCoreInfo)
+        {
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
+                    {
+                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
+                        {
+                            int lava = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Lava) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Lava] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.x;
+                            int glacier = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Glacier) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Glacier] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.y;
+                            int eitr = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Eitr) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Eitr] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.z;
+
+                            mnodeTable[coord_y, coord_x].GeologyNodeTable[detailCoord_y, detailCoord_x] = directNodeTableCoreInfo.AxisBaseTable.GeologyNodeTable[lava, glacier, eitr];
+                        }
+                    }
+                }
+            }
+        }
+        internal void DetermineBiologyNodes(DirectNodeTableCoreInfo directNodeTableCoreInfo)
+        {
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
+                    {
+                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
+                        {
+                            int lava = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Lava) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Lava] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.x;
+                            int glacier = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Glacier) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Glacier] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.y;
+                            int eitr = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Eitr) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Eitr] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.z;
+
+                            mnodeTable[coord_y, coord_x].BiologyNodeTable[detailCoord_y, detailCoord_x] = directNodeTableCoreInfo.AxisBaseTable.BiologyNodeTable[lava, glacier, eitr];
+                        }
+                    }
+                }
+            }
+        }
+        internal void DeterminePropNodes(DirectNodeTableCoreInfo directNodeTableCoreInfo)
+        {
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    for (int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
+                    {
+                        for (int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
+                        {
+                            int lava = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Lava) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Lava] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.x;
+                            int glacier = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Glacier) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Glacier] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.y;
+                            int eitr = mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x].ContainsKey(AxisBaseTablePalette.EFundamentalElements.Eitr) ? mnodeTable[coord_y, coord_x].FundamentalElementsInflunceTable[detailCoord_y, detailCoord_x][AxisBaseTablePalette.EFundamentalElements.Eitr] : directNodeTableCoreInfo.AxisBaseTable.FundamentalAxisLength.z;
+
+                            mnodeTable[coord_y, coord_x].PropNodeTable[detailCoord_y, detailCoord_x] = directNodeTableCoreInfo.AxisBaseTable.PropNodeTable[lava, glacier, eitr];
+                        }
+                    }
+                }
+            }
+        }
+
+        private Texture2D GenerateNoiseMapTexture()
+        {
+            Texture2D texture = new Texture2D(AbstractAxisLength.x * DetailAxisLength.x, AbstractAxisLength.y * DetailAxisLength.y);
+
+            List<float> overlapScales = new List<float>();
+            float powNum = 0;
+
+            System.Random random = new System.Random();
+            int overlapCount = random.Next(2, 4);
+
+            for (int i = 0; i < overlapCount; i++)
+            {
+                overlapScales.Add(UnityEngine.Random.Range(0.1f, 1.0f));
+            }
+            powNum = UnityEngine.Random.Range(2.0f, 4.0f);
+
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y * DetailAxisLength.y; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x * DetailAxisLength.x; coord_x++)
+                {
+                    //  noise generating
+                    float noiseValue = 0.0f;
+
+                    for (int index = 0; index < overlapScales.Count; index++)
+                    {
+                        noiseValue += 1 / overlapScales[index] * Mathf.PerlinNoise(coord_x / AbstractAxisLength.x * DetailAxisLength.x * overlapScales[index], coord_y / AbstractAxisLength.y * DetailAxisLength.y * overlapScales[index]);
+                    }
+                    noiseValue = (float)Math.Pow(noiseValue, powNum);
+
+                    if (noiseValue < 0.0f)
+                    {
+                        noiseValue = 0.0f;
+                    }
+                    else if (noiseValue > 1.0f)
+                    {
+                        noiseValue = 1.0f;
+                    }
+
+                    texture.SetPixel(coord_x, coord_y, new Color(noiseValue, noiseValue, noiseValue));
+                }
+            }
+            texture.Apply();
+
+            random = null;
+            return texture;
+        }
+        private void CalculateFloorBoundary(ref bool[,] blankTable, in InputPack_Auto inputPack)
+        {
+            for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for (int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    if (inputPack.NoiseTexture.GetPixel(coord_x, coord_y).r >= DownerValueBoundary && inputPack.NoiseTexture.GetPixel(coord_x, coord_y).r <= UpperValueBoundary)
                     {
                         blankTable[coord_y, coord_x] = true;
                     }
@@ -1114,8 +1480,16 @@ namespace DirectNodeEditor
             }
 
             SetBlankFalseEdgyNodes(ref blankTable);
+
+            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
+            {
+                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
+                {
+                    mnodeTable[coord_y, coord_x].Possible = blankTable[coord_y, coord_x] ? true : false;
+                }
+            }
         }
-        internal void SetBlankFalseEdgyNodes(ref bool[,] blankTable)
+        private void SetBlankFalseEdgyNodes(ref bool[,] blankTable)
         {
             for (int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
             {
@@ -1140,7 +1514,7 @@ namespace DirectNodeEditor
                 }
             }
         }
-        internal void SearchNodeAndSetFalse(ref bool[,] blankTable, int x, int y)
+        private void SearchNodeAndSetFalse(ref bool[,] blankTable, int x, int y)
         {
             if (blankTable[y, x])
             {
@@ -1212,179 +1586,22 @@ namespace DirectNodeEditor
                 }
             }
         }
-        internal void DetermineTableheight()
-        {
-            Texture2D texture = GenerateNoiseMapTexture();
-
-            int realCoord_x = 0, realCoord_y = 0;
-            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
-            {
-                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
-                {
-                    for(int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++, realCoord_y++)
-                    {
-                        for(int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++, realCoord_x++)
-                        {
-                            mnodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x] = texture.GetPixel(realCoord_x, realCoord_y).r;
-                        }
-                    }
-                }
-            }
-        }
-        internal Texture2D GenerateNoiseMapTexture()
-        {
-            Texture2D texture = new Texture2D(AbstractAxisLength.x * DetailAxisLength.x, AbstractAxisLength.y * DetailAxisLength.y);
-
-            List<float> overlapScales = new List<float>();
-            float powNum = 0;
-
-            System.Random random = new System.Random();
-            int overlapCount = random.Next(2, 4);
-
-            for (int i = 0; i < overlapCount; i++)
-            {
-                overlapScales.Add(UnityEngine.Random.Range(0.1f, 1.0f));
-            }
-            powNum = UnityEngine.Random.Range(2.0f, 4.0f);
-
-            for (int coord_y = 0; coord_y < AbstractAxisLength.y * DetailAxisLength.y; coord_y++)
-            {
-                for (int coord_x = 0; coord_x < AbstractAxisLength.x * DetailAxisLength.x; coord_x++)
-                {
-                    //  noise generating
-                    float noiseValue = 0.0f;
-
-                    for (int index = 0; index < overlapScales.Count; index++)
-                    {
-                        noiseValue += 1 / overlapScales[index] * Mathf.PerlinNoise(coord_x / AbstractAxisLength.x * DetailAxisLength.x * overlapScales[index], coord_y / AbstractAxisLength.y * DetailAxisLength.y * overlapScales[index]);
-                    }
-                    noiseValue = (float)Math.Pow(noiseValue, powNum);
-
-                    if (noiseValue < 0.0f)
-                    {
-                        noiseValue = 0.0f;
-                    }
-                    else if (noiseValue > 1.0f)
-                    {
-                        noiseValue = 1.0f;
-                    }
-
-                    texture.SetPixel(coord_x, coord_y, new Color(noiseValue, noiseValue, noiseValue));
-                }
-            }
-            texture.Apply();
-
-            random = null;
-            return texture;
-        }
-        internal void DetermineSinkHole()
-        {
-            System.Random random = new System.Random();
-
-            int totalSinkHoleNumber = (-1) * (FloorDepth + 3) * (FloorDepth - 30) / 90 + random.Next(-1, 2);
-
-            if(totalSinkHoleNumber > 0)
-            {
-                Vector2Int vector = new Vector2Int();
-
-                for(int i = 0; i < totalSinkHoleNumber; i++)
-                {
-                    while(true)
-                    {
-                        vector.x = random.Next(0, AbstractAxisLength.x);
-                        vector.y = random.Next(0, AbstractAxisLength.y);
-
-                        if(mnodeTable[vector.y / DetailAxisLength.y, vector.x / DetailAxisLength.x].FundamentalElementsTable[vector.y % DetailAxisLength.y, vector.x % DetailAxisLength.x] == 1)
-                        {
-                            break;
-                        }
-                    }
-
-                    SetHoleNodes(vector, 5.0f, 25.0f);
-                }
-            }
-
-            random = null;
-        }
-        internal void DetermineValley(VallyCalculate vallyCalculate)
-        {
-            List<Vector2Int> vectors = vallyCalculate.CalsulateValley(VallyCalculate.DefaultExtraTime);
-
-            for(int i = 0; i < vectors.Count; i++)
-            {
-                SetHoleNodes(vectors[i], 10.0f, 20.0f);
-            }
-        }
-        public void DetermineLava()
-        {
-            int lavaNum = (int)((-1) * (FloorDepth - 10) * (Math.Pow((FloorDepth - 28), 3) / 1845.2));
-
-            System.Random random = new System.Random();
-            List<Vector2Int> coordList = new List<Vector2Int>();
-            for(int i = 0; i < lavaNum; i++)
-            {
-                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Lava, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
-            }
-
-            for(int i = 0; i < lavaNum; i++)
-            {
-                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Lava, coordList[i]);
-            }
-
-            random = null;
-        }
-        public void DetermineGlacier()
-        {
-            int glacierNum = (int)((-1) * FloorDepth * Math.Pow((FloorDepth - 20), 3) / 4219);
-
-            System.Random random = new System.Random();
-            List<Vector2Int> coordList = new List<Vector2Int>();
-            for (int i = 0; i < glacierNum; i++)
-            {
-                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Glacier, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
-            }
-
-            for (int i = 0; i < glacierNum; i++)
-            {
-                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Glacier, coordList[i]);
-            }
-
-            random = null;
-        }
-        public void DetermineEitr()
-        {
-            int eitrNum = (int)((-1) * (FloorDepth + 11) * (Math.Pow((FloorDepth - 33), 33) / 197653) + 1);
-
-            System.Random random = new System.Random();
-            List<Vector2Int> coordList = new List<Vector2Int>();
-            for (int i = 0; i < eitrNum; i++)
-            {
-                coordList.Add(SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements.Eitr, random.Next(0, AbstractAxisLength.x * DetailAxisLength.x), random.Next(0, AbstractAxisLength.y * DetailAxisLength.y)));
-            }
-
-            for (int i = 0; i < eitrNum; i++)
-            {
-                SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements.Eitr, coordList[i]);
-            }
-
-            random = null;
-        }
-        internal Vector2Int SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements fundamentalElements, int realCoord_x, int realCoord_y)
+        private Vector2Int SearckFundamentalNodeCoord(AxisBaseTablePalette.EFundamentalElements fundamentalElements, int realCoord_x, int realCoord_y)
         {
             Vector2Int vector2Int = new Vector2Int();
             bool triger = true;
 
-            switch(fundamentalElements)
+            switch (fundamentalElements)
             {
                 case AxisBaseTablePalette.EFundamentalElements.Lava:
-                    if(mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] >= LavaArea.x && mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] <= LavaArea.y)
+                    if (mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] >= LavaArea.x && mnodeTable[realCoord_y / DetailAxisLength.y, realCoord_x / DetailAxisLength.x].HeightTable[realCoord_y % DetailAxisLength.y, realCoord_x % DetailAxisLength.x] <= LavaArea.y)
                     {
                         vector2Int.x = realCoord_x;
                         vector2Int.y = realCoord_y;
                     }
                     else
                     {
-                        triger = true;   
+                        triger = true;
                     }
                     break;
 
@@ -1413,7 +1630,7 @@ namespace DirectNodeEditor
                     break;
             }
 
-            if(triger)
+            if (triger)
             {
                 if (realCoord_x == 0)
                 {
@@ -1479,14 +1696,14 @@ namespace DirectNodeEditor
 
             return vector2Int;
         }
-        internal void SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements fundamentalElements, Vector2Int realCoord)
+        private void SetFundamentalNode(AxisBaseTablePalette.EFundamentalElements fundamentalElements, Vector2Int realCoord)
         {
-            switch(fundamentalElements)
+            switch (fundamentalElements)
             {
                 case AxisBaseTablePalette.EFundamentalElements.Lava:
-                    if(mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] >= LavaArea.x && mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] <= LavaArea.y)
+                    if (mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] >= LavaArea.x && mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].HeightTable[realCoord.y % DetailAxisLength.y, realCoord.x % DetailAxisLength.x] <= LavaArea.y)
                     {
-                        if(mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] % (int)(AxisBaseTablePalette.EFundamentalElements.Lava) != 0)
+                        if (mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] % (int)(AxisBaseTablePalette.EFundamentalElements.Lava) != 0)
                         {
                             mnodeTable[realCoord.y / DetailAxisLength.y, realCoord.x / DetailAxisLength.x].FundamentalElementsTable[realCoord.y % DetailAxisLength.y, realCoord.x / DetailAxisLength.x] *= (int)(AxisBaseTablePalette.EFundamentalElements.Lava);
 
@@ -1594,26 +1811,22 @@ namespace DirectNodeEditor
                 }
             }
         }
-        internal void SetFundamentalNodeInfluence(AxisBaseTablePalette.EFundamentalElements fundamentalElements, Vector2Int realCoord)
+        private void SetFundamentalNodeInfluence(AxisBaseTablePalette.EFundamentalElements fundamentalElements, Vector2Int realCoord)
         {
             int r = 0;
-            int targetFundamentalElement = 0;
 
-            switch(fundamentalElements)
+            switch (fundamentalElements)
             {
                 case AxisBaseTablePalette.EFundamentalElements.Lava:
                     r = FundamentalInfluenceRadius.x;
-                    targetFundamentalElement = (int)(AxisBaseTablePalette.EFundamentalElements.Lava);
                     break;
 
                 case AxisBaseTablePalette.EFundamentalElements.Glacier:
                     r = FundamentalInfluenceRadius.y;
-                    targetFundamentalElement = (int)(AxisBaseTablePalette.EFundamentalElements.Glacier);
                     break;
 
                 case AxisBaseTablePalette.EFundamentalElements.Eitr:
                     r = FundamentalInfluenceRadius.z;
-                    targetFundamentalElement = (int)(AxisBaseTablePalette.EFundamentalElements.Eitr);
                     break;
             }
 
@@ -1621,14 +1834,23 @@ namespace DirectNodeEditor
             {
                 for (int coord_x = realCoord.x - r; coord_x < realCoord.x + r + 1; coord_x++)
                 {
-                    if ((coord_x >= 0 && coord_x < AbstractAxisLength.x * DetailAxisLength.x && coord_y >= 0 && coord_y < AbstractAxisLength.y * DetailAxisLength.y) && (coord_y >= (-1) * (coord_x - realCoord.x + r) + realCoord.y - r / 2 && coord_y >= coord_x - realCoord.x - r + realCoord.y - r / 2 && coord_y <= coord_x - realCoord.x + r + realCoord.y + r / 2 && coord_y <= (-1) * (coord_x - realCoord.x - r) + realCoord.y + r / 2))
+                    if ((coord_x >= 0 && coord_x < AbstractAxisLength.x && coord_y >= 0 && coord_y < AbstractAxisLength.y) && (coord_y >= (-1) * (coord_x - realCoord.x + r) + realCoord.y - r / 2 && coord_y >= coord_x - realCoord.x - r + realCoord.y - r / 2 && coord_y <= coord_x - realCoord.x + r + realCoord.y + r / 2 && coord_y <= (-1) * (coord_x - realCoord.x - r) + realCoord.y + r / 2))
                     {
-                        mnodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x] *= targetFundamentalElement;
+                        int value = (int)(Math.Sqrt(Math.Pow(realCoord.x - coord_x, 2.0) + Math.Pow(realCoord.y - coord_y, 2.0))) + 1;
+                        if (NodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x].ContainsKey(fundamentalElements) == false)
+                        {
+                            mnodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x].Add(fundamentalElements, value);
+                        }
+                        else if (NodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x][fundamentalElements] > value)
+                        {
+                            mnodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x].Remove(fundamentalElements);
+                            mnodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x].Add(fundamentalElements, value);
+                        }
                     }
                 }
             }
         }
-        internal void SetHoleNodes(Vector2Int realCoord, float minScale, float maxScale)
+        private void SetHoleNodes(Vector2Int realCoord, float minScale, float maxScale)
         {
             int r = (int)UnityEngine.Random.Range(minScale, maxScale);
 
@@ -1638,49 +1860,12 @@ namespace DirectNodeEditor
                 {
                     if ((coord_x >= 0 && coord_x < AbstractAxisLength.x * DetailAxisLength.x && coord_y >= 0 && coord_y < AbstractAxisLength.y * DetailAxisLength.y) && (coord_y >= (-1) * (coord_x - realCoord.x + r) + realCoord.y - r / 2 && coord_y >= coord_x - realCoord.x - r + realCoord.y - r / 2 && coord_y <= coord_x - realCoord.x + r + realCoord.y + r / 2 && coord_y <= (-1) * (coord_x - realCoord.x - r) + realCoord.y + r / 2))
                     {
-                        mnodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsInflunceTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x] *= (int)AxisBaseTablePalette.EFundamentalElements.SinkHole;
+                        mnodeTable[coord_y / DetailAxisLength.y, coord_x / DetailAxisLength.x].FundamentalElementsTable[coord_y % DetailAxisLength.y, coord_x % DetailAxisLength.x] *= (int)AxisBaseTablePalette.EFundamentalElements.SinkHole;
                     }
                 }
             }
         }
-        internal void GenerateCaveStructure(CaveStructureChancePack caveStructureChancePack)
-        {
-            CaveStructure caveStructure = new CaveStructure(new CaveStructure.InputPack(GetCurrentHeightMap(), AbstractAxisLength, DetailAxisLength, caveStructureChancePack.NodeOccurChance, caveStructureChancePack.BridgeOccurChance, caveStructureChancePack.NodeOccurWeight, caveStructureChancePack.NodeWebBaseDetermineChance, caveStructureChancePack.NodeWebConnectionChance, caveStructureChancePack.AbstractDiagonalChancePerNode, caveStructureChancePack.DetailDiagonalChancePerNode));
-        }
-        internal Texture2D GetCurrentHeightMap()
-        {
-            Texture2D texture = new Texture2D(AbstractAxisLength.x * DetailAxisLength.x, AbstractAxisLength.y * DetailAxisLength.y);
-
-            for(int coord_y = 0; coord_y < AbstractAxisLength.y; coord_y++)
-            {
-                for(int coord_x = 0; coord_x < AbstractAxisLength.x; coord_x++)
-                {
-                    for(int detailCoord_y = 0; detailCoord_y < DetailAxisLength.y; detailCoord_y++)
-                    {
-                        for(int detailCoord_x = 0; detailCoord_x < DetailAxisLength.x; detailCoord_x++)
-                        {
-                            texture.SetPixel(coord_x + detailCoord_x, coord_y + detailCoord_y, new Color(NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x], NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x], NodeTable[coord_y, coord_x].HeightTable[detailCoord_y, detailCoord_x]));
-                        }
-                    }
-                }
-            }
-            texture.Apply();
-
-            return texture;
-        }
-        internal void DetermineGeologyNodes()
-        {
-
-        }
-        internal void DetermineBiologyNodes()
-        {
-
-        }
-        internal void DeterminePropNodes()
-        {
-
-        }
-        internal void CalculateLiquidEffect()
+        private void CalculateLiquidEffect()
         {
 
         }
