@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using AxisBaseTableManager;
 using UnityEngine;
 using DirectNodeEditor;
@@ -207,6 +209,52 @@ namespace Utilities
             }
 
             return primeStorage[primeStorage.Count - 1];
+        }
+    }
+    public static class AESEncrypt
+    {
+        public static string Encrypt(string textToEncrypt, string key)
+        {
+            RijndaelManaged rijndaelCipher = new RijndaelManaged();
+            rijndaelCipher.Mode = CipherMode.CBC;
+            rijndaelCipher.Padding = PaddingMode.PKCS7;
+
+            rijndaelCipher.KeySize = 128;
+            rijndaelCipher.BlockSize = 128;
+            byte[] pwdBytes = Encoding.UTF8.GetBytes(key);
+            byte[] keyBytes = new byte[16];
+            int len = pwdBytes.Length;
+            if (len > keyBytes.Length)
+            {
+                len = keyBytes.Length;
+            }
+
+            Array.Copy(pwdBytes, keyBytes, len);
+            rijndaelCipher.Key = keyBytes;
+            rijndaelCipher.IV = keyBytes;
+            ICryptoTransform transform = rijndaelCipher.CreateEncryptor();
+            byte[] plainText = Encoding.UTF8.GetBytes(textToEncrypt);
+            return Convert.ToBase64String(transform.TransformFinalBlock(plainText, 0, plainText.Length));
+        }
+        public static string Decrypt(string textToDecrypt, string key)
+        {
+            RijndaelManaged rijndaelCipher = new RijndaelManaged();
+            rijndaelCipher.Mode = CipherMode.CBC;
+            rijndaelCipher.Padding = PaddingMode.PKCS7;
+
+            rijndaelCipher.KeySize = 128;
+            rijndaelCipher.BlockSize = 128;
+            byte[] encryptedData = Convert.FromBase64String(textToDecrypt);
+            byte[] pwdBytes = Encoding.UTF8.GetBytes(key);
+            byte[] keyBytes = new byte[16];
+            int len = pwdBytes.Length;
+            if (len > keyBytes.Length) { len = keyBytes.Length; }
+
+            Array.Copy(pwdBytes, keyBytes, len);
+            rijndaelCipher.Key = keyBytes;
+            rijndaelCipher.IV = keyBytes;
+            byte[] plainText = rijndaelCipher.CreateDecryptor().TransformFinalBlock(encryptedData, 0, encryptedData.Length);
+            return Encoding.UTF8.GetString(plainText);
         }
     }
     public class VallyCalculate
@@ -469,12 +517,12 @@ namespace Utilities
 
 
 
-            public bool Exist
+            internal bool Exist
             {
                 get => mbexist;
                 set => mbexist = value;
             }
-            public bool WebBase
+            internal bool WebBase
             {
                 get => mbwebBase;
                 set => mbwebBase = value;
@@ -570,6 +618,7 @@ namespace Utilities
                 random = null;
             }
         }
+
         public enum EChanceKinds
         {
             NodeOccurChance = 1,
@@ -578,6 +627,11 @@ namespace Utilities
             BridgeWebDetermineChance = 5,
             AbstractDiagonalChancePerNode = 6,
             DetailDiagonalChancePerNode = 7
+        };
+        public enum EAxisType
+        {
+            Vertical = 1,
+            Horizontal = 2
         };
 
         public struct InputPack
@@ -675,6 +729,28 @@ namespace Utilities
         public Vector2Int DetailAxisLength
         {
             get => mdetailAxisLength;
+        }
+
+        public static List<List<float>> GetNewBoundaryFrequency(int axisLength)
+        {
+            List<List<float>> frequency = new List<List<float>>();
+            float shortcutNum = (float)(Math.PI / 2.0);
+            
+            System.Random random = new System.Random();
+
+            for (int index = 0; index < axisLength + 1; index++)
+            {
+                frequency.Add(new List<float>());
+
+                frequency[index].Add(shortcutNum * 2);
+                frequency[index].Add(shortcutNum * 4);
+                frequency[index].Add(shortcutNum / random.Next(3, 11));
+                frequency[index].Add(shortcutNum / random.Next(20, 41));
+            }
+
+            random = null;
+
+            return frequency;
         }
 
         private void GenerateCaveStructure(InputPack inputPack)
@@ -795,7 +871,6 @@ namespace Utilities
                 }
             }
         }
-
     }
     public class DetermineMapRealCoord
     {
