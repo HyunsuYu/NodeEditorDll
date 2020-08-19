@@ -292,6 +292,25 @@ namespace DirectNodeEditor
 
             return bakeList;
         }
+        public List<CaveStructure.Node[,]> GetCavestructures()
+        {
+            List<CaveStructure.Node[,]> caveStructure = new List<CaveStructure.Node[,]>();
+
+            for(int index = 0; index < FloorTable.Count; index++)
+            {
+                caveStructure.Add(new CaveStructure.Node[FloorTable[index].AbstractAxisLength.y, FloorTable[index].AbstractAxisLength.x]);
+
+                for(int coord_y = 0; coord_y < FloorTable[index].AbstractAxisLength.y; coord_y++)
+                {
+                    for(int coord_x = 0; coord_x < FloorTable[index].AbstractAxisLength.x; coord_x++)
+                    {
+                        caveStructure[index][coord_y, coord_x] = FloorTable[index].NodeTable[coord_y, coord_x].CaveStructure;
+                    }
+                }
+            }
+
+            return caveStructure;
+        }
         public bool AddFloor(int index)
         {
             if (index < 0 || index > mfloorTable.Count - 1)
