@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\Utilities\bin\Debug\netcoreapp3.1\DirectNodeTableManagerToolDll.dll&quot;" />
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\Utilities\bin\Debug\netcoreapp3.1\DirectNodeTableManagerToolDll.dll&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;D:\Private\Private Project\InTheAbyss_Editor\Assets\Plugins\DirectNodeTableManagerToolDll.dll&quot;" />
   </Target>
 
 </Project>

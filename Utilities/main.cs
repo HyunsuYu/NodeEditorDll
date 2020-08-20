@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
-using AxisBaseTableManager;
+using AxisBaseTableEditor;
 using UnityEngine;
 using DirectNodeEditor;
 
@@ -31,64 +31,35 @@ namespace Utilities
             }
         }
 
-        public static List<EncodingNodeData> GetEncodingNodeDatas(AxisBaseTablePalette axisBaseTablePalette, AxisBaseTablePalette.EPaletteType paletteType)
+        public static List<EncodingNodeData> GetEncodingNodeDatas(AxisBaseTableNodePalette axisBaseTablePalette, AxisBaseTableNodePalette.ENodePaletteType paletteType)
         {
             List<EncodingNodeData> encodingNodeDatas = new List<EncodingNodeData>();
             int curIndex = 1;
 
             switch(paletteType)
             {
-                case AxisBaseTablePalette.EPaletteType.Geology:
+                case AxisBaseTableNodePalette.ENodePaletteType.Geology:
                     for (int index = 0; index < axisBaseTablePalette.GeologyNodeNames.Count; index++)
                     {
-                        if (axisBaseTablePalette.GeologyNodeTable[axisBaseTablePalette.GeologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Low)
-                        {
                             encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.GeologyNodeNames[index], GetNextPrimeNumber(curIndex)));
                             curIndex++;
-                        }
-                    }
-                    for (int index = 0; index < axisBaseTablePalette.GeologyNodeNames.Count; index++)
-                    {
-                        if (axisBaseTablePalette.GeologyNodeTable[axisBaseTablePalette.GeologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Middle)
-                        {
-                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.GeologyNodeNames[index], GetNextPrimeNumber(curIndex)));
-                            curIndex++;
-                        }
-                    }
-                    for (int index = 0; index < axisBaseTablePalette.GeologyNodeNames.Count; index++)
-                    {
-                        if (axisBaseTablePalette.GeologyNodeTable[axisBaseTablePalette.GeologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.High)
-                        {
-                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.GeologyNodeNames[index], GetNextPrimeNumber(curIndex)));
-                            curIndex++;
-                        }
+                        
                     }
                     break;
 
-                case AxisBaseTablePalette.EPaletteType.Biology:
+                case AxisBaseTableNodePalette.ENodePaletteType.Biology:
                     for (int index = 0; index < axisBaseTablePalette.BiologyNodeNames.Count; index++)
                     {
-                        if (axisBaseTablePalette.BiologyNodeTable[axisBaseTablePalette.BiologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Low)
-                        {
                             encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.BiologyNodeNames[index], GetNextPrimeNumber(curIndex)));
                             curIndex++;
-                        }
                     }
+                    break;
+
+                case AxisBaseTableNodePalette.ENodePaletteType.Prop:
                     for (int index = 0; index < axisBaseTablePalette.BiologyNodeNames.Count; index++)
                     {
-                        if (axisBaseTablePalette.BiologyNodeTable[axisBaseTablePalette.BiologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.Middle)
-                        {
-                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.BiologyNodeNames[index], GetNextPrimeNumber(curIndex)));
-                            curIndex++;
-                        }
-                    }
-                    for (int index = 0; index < axisBaseTablePalette.BiologyNodeNames.Count; index++)
-                    {
-                        if (axisBaseTablePalette.BiologyNodeTable[axisBaseTablePalette.BiologyNodeNames[index].GetHashCode()].OrderedTypeClassify == OrderedNodeType.EOrderedTypeClassify.High)
-                        {
-                            encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.BiologyNodeNames[index], GetNextPrimeNumber(curIndex)));
-                            curIndex++;
-                        }
+                        encodingNodeDatas.Add(new EncodingNodeData(axisBaseTablePalette.PropNodeNames[index], GetNextPrimeNumber(curIndex)));
+                        curIndex++;
                     }
                     break;
             }

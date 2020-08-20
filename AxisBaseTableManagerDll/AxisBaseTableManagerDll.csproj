@@ -11,10 +11,13 @@
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
+    <Reference Include="Utilities">
+      <HintPath>..\Utilities\bin\Debug\netcoreapp3.1\Utilities.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\DirectNodeTableManagerTable\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\Utilities\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll&quot;" />
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\DirectNodeTableManagerTable\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;D:\dll\NodeEditorDll\Utilities\bin\Debug\netcoreapp3.1\AxisBaseTableManagerDll.dll&quot;&#xD;&#xA;copy &quot;$(TargetPath)&quot; &quot;D:\Private\Private Project\InTheAbyss_Editor\Assets\Plugins\AxisBaseTableManagerDll.dll&quot;" />
   </Target>
 
 </Project>
